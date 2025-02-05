@@ -1,0 +1,196 @@
+        body {
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: hsl(0, 0%, 100%);
+        }
+
+        #container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+            width: 90%;
+            max-width: 800px; /* Prevent it from being too wide */
+        }
+
+        #header {
+            display: flex;
+            justify-content: center; /* Center the buttons and scoreboard horizontally */
+            align-items: center;
+            gap: 20px;
+            width: 100%;
+        }
+
+        #scoreBoard {
+            font-family: Arial, sans-serif;
+            font-size: 16px;
+            color: #333;
+            padding: 10px;
+            background-color: #f4f4f4;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            min-width: 120px;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .score {
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        .score.blue { color: blue; }
+        .score.green { color: green; }
+
+        #startButton, #pauseButton {
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        #startButton:hover, #pauseButton:hover {
+            background-color: #45a049;
+        }
+
+        #canvasContainer {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 20px;
+            width: 100%;
+        }
+
+        canvas {
+            border: 1px solid #000;
+            width: 100%;
+            max-width: 400px;
+            height: auto;
+        }
+
+        #buttonContainer {
+            display: flex;
+            gap: 30px;
+            justify-content: center;
+            /* Ensures the buttons stay horizontally aligned */
+            flex-wrap: nowrap;
+        }
+
+        /* Responsive Button Styling */
+        #launchCircleButton,
+            #launchRectangleButton,
+            #launchSquareButton {
+                background-color: #4CAF50;
+                color: white;
+                border: none;
+                cursor: pointer;
+            }
+
+            #launchCircleButton {
+                width: 60px;
+                height: 60px;
+                border-radius: 50%;
+            }
+
+            #launchRectangleButton {
+                width: 70px;
+                height: 45px;
+                border-radius: 5px;
+            }
+
+            #launchSquareButton {
+                width: 60px;
+                height: 60px;
+                border-radius: 5px;
+            }
+
+            #launchTriangleButton {
+            width: 55px;
+            height: 60px;
+            background-color: transparent;
+            clip-path: polygon(50% 0%, 0% 100%, 100% 100%);
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+
+        #launchTriangleButton:hover {
+            background-color: #45a049;
+        }
+
+        #launchStarButton {
+            background-color: red;
+            color: white;
+            width: 50px;
+            height: 50px;
+            display: inline-block;
+            clip-path: polygon(
+                50% 0%, 61% 35%, 98% 35%, 
+                68% 57%, 79% 91%, 50% 70%, 
+                21% 91%, 32% 57%, 2% 35%, 
+                39% 35%
+            );
+            cursor: pointer;
+            border: none;
+            flex-shrink: 0;
+            transition: all 0.3s ease-in-out;
+        }
+
+        /* Add glow and scale effect when enabled */
+        #launchStarButton:not(:disabled) {
+            background-color: red;
+            box-shadow: 0px 0px 10px 3px yellow; /* Add glowing effect */
+            transform: scale(1.1); /* Slightly enlarge */
+        }
+
+        /* Style when the button is disabled */
+        #launchStarButton:disabled {
+            background-color: gray;
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* Responsive Adjustments */
+        @media (max-width: 500px) {
+            #container {
+                flex-direction: column; /* Stack elements on small screens */
+                gap: 10px;
+            }
+
+            canvas {
+                max-width: 100%;
+            }
+
+            #buttonContainer {
+                gap: 5px;
+                flex-direction: row; /* Ensures buttons stay horizontal */
+            }
+
+            button {
+                font-size: 14px;
+                padding: 8px;
+            }
+
+            #scoreBoard {
+                font-size: 14px;
+                padding: 8px;
+                min-width: 100px;
+            }
+
+            #startButton, #pauseButton {
+                font-size: 14px;
+                padding: 8px 16px;
+            }
+        }
+

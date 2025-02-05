@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Randomly Moving Pieces</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div id="container">
+        <!-- Header Section with Start Game, Scoreboard, and Pause -->
+        <div id="header">
+            <button id="startButton">Start Game</button>
+            <div id="scoreBoard">
+                <div class="score blue"><strong>Score:</strong> <span id="scoreBlue">0</span></div>
+                <div class="score green"><strong>Score:</strong> <span id="scoreGreen">0</span></div>
+            </div>
+            <button id="pauseButton">Un/Pause</button>
+        </div>
+    
+        <!-- Canvas Section -->
+        <div id="canvasContainer">
+            <canvas id="colorCanvas" width="400" height="420"></canvas>
+        </div>
+
+        <!-- Buttons for Game Pieces -->
+        <div id="buttonContainer">
+            <button id="launchCircleButton">5</button>
+            <button id="launchRectangleButton">5</button>
+            <button id="launchSquareButton">5</button>
+            <button id="launchTriangleButton">5</button>
+            <button id="launchStarButton" disabled>0</button>
+        </div>
+    </div>
+
+    <!-- Link to JavaScript -->
+    <script type="module" src="js/main.js"></script>
+</body>
+</html>
