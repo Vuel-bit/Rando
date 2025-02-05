@@ -59,7 +59,7 @@ export class GameManager {
         } else {
             this.playerChargeManager.resume();
             this.aiChargeManager.resume();
-            this.aiManager.stopAI();
+            this.aiManager.startAI();
         }
     }
 
