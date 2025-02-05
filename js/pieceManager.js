@@ -37,10 +37,10 @@ export class PieceManager {
     /*** 🔹 Get speed based on type ***/
     getSpeedForType(type) {
         switch (type) {
-            case "circle": return 1;
-            case "rectangle": return 0.2;
-            case "square": return 0.5;
-            case "triangle": return 2;
+            case "circle": return .5;
+            case "rectangle": return 0.1;
+            case "square": return 0.25;
+            case "triangle": return 1;
             default: return 0.1;
         }
     }
