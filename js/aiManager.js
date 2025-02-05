@@ -9,11 +9,7 @@ export class AIManager {
     startAI(interval = 4000) {
         if (this.aiInterval) return; // Prevent multiple intervals
 
-        this.makeMove(); // put initial pieces on the board
-        this.makeMove();
-        this.makeMove();
-        this.makeMove();
-        this.makeMove();
+
 
         this.aiInterval = setInterval(() => {
             this.makeMove();
