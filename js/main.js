@@ -21,28 +21,20 @@ document.addEventListener("DOMContentLoaded", () => {
 
     function initializeGame() {
         console.log("Game initialized.");
-
+    
         if (!window.firebaseAuth) {
             console.error("❌ Firebase Auth is still undefined!");
             return;
         }
-
-
-
+    
         // ✅ If a game is already running, stop it before starting a new one
         if (gameManager && gameManager.isRunning) {
             console.log("🛑 Stopping existing game before starting a new one...");
             gameManager.stop();
             gameManager = null; // Clear reference to prevent stacking
         }
-
-        if (!gameManager) {
-            console.log("✅ Creating new GameManager instance...");
-            gameManager = new GameManager();
-        } else {
-            console.log("♻️ Reusing existing GameManager...");
-        }
     
+        // ✅ Get the correct AI interval for the selected difficulty
         const selectedBoard = localStorage.getItem("selectedBoard") || "board1";
         let aiInterval = 4500; // Default to Easy
     
@@ -54,40 +46,42 @@ document.addEventListener("DOMContentLoaded", () => {
     
         console.log(`🎮 Starting game on difficulty: ${selectedBoard}, AI interval: ${aiInterval}ms`);
     
+        // ✅ Pass the correct interval to GameManager
         gameManager = new GameManager(aiInterval);
         gameManager.start();
-
-                // ✅ Enable "Return to Game" button when a new game starts
-                const returnToGameButton = document.getElementById("returnToGameButton");
-                if (returnToGameButton) {
-                    returnToGameButton.disabled = false;
-                } else {
-                    console.error("❌ returnToGameButton not found in DOM!");
-                }
+    
+        // ✅ Enable "Return to Game" button when a new game starts
+        const returnToGameButton = document.getElementById("returnToGameButton");
+        if (returnToGameButton) {
+            returnToGameButton.disabled = false;
+        } else {
+            console.error("❌ returnToGameButton not found in DOM!");
+        }
+    
         // ✅ Remove Old Button Event Listeners Before Re-Adding
         removeButtonEventListeners();
-
+    
         // ✅ Re-Add Button Event Listeners Only Once
         gameManager.playerChargeManager.addButton("launchCircleButton", "circle", () => {
             gameManager.pieceManager.createPiece("circle");
         });
-
+    
         gameManager.playerChargeManager.addButton("launchTriangleButton", "triangle", () => {
             gameManager.pieceManager.createPiece("triangle");
         });
-
+    
         gameManager.playerChargeManager.addButton("launchRectangleButton", "rectangle", () => {
             gameManager.pieceManager.createPiece("rectangle");
         });
-
+    
         gameManager.playerChargeManager.addButton("launchSquareButton", "square", () => {
             gameManager.pieceManager.createPiece("square");
         });
-
+    
         // ✅ Update Button Displays
         gameManager.playerChargeManager.updateButtonDisplays();
-
     }
+    
 
 
 

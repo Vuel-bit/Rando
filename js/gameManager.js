@@ -214,7 +214,7 @@ export class GameManager {
     
         const endGameModal = document.getElementById("endGameModal");
         const endGameMessage = document.getElementById("endGameMessage");
-        let endGameButton = document.getElementById("endGameButton"); // ✅ Store reference
+        const endGameButton = document.getElementById("endGameButton");
         const returnToGameButton = document.getElementById("returnToGameButton");
         const boardSelector = document.getElementById("boardSelector");
     
@@ -227,6 +227,9 @@ export class GameManager {
         endGameMessage.textContent = message;
         endGameModal.style.display = "flex";
     
+        // ✅ Pause the game
+        this.togglePause();
+    
         // ✅ Disable "Return to Game" since no game is running
         returnToGameButton.disabled = true;
     
@@ -236,22 +239,24 @@ export class GameManager {
         }
     
         // ✅ Remove old event listener before adding a new one
-        let newEndGameButton = endGameButton.cloneNode(true);
-        endGameButton.parentNode.replaceChild(newEndGameButton, endGameButton);
-        endGameButton = newEndGameButton;
+        endGameButton.replaceWith(endGameButton.cloneNode(true));
+        let newEndGameButton = document.getElementById("endGameButton");
     
-        // ✅ Add event listener to reset game and return to lobby
-        endGameButton.addEventListener("click", () => {
+        // ✅ Reset the game and return to lobby
+        newEndGameButton.addEventListener("click", () => {
             console.log("🔄 Resetting game & returning to lobby...");
     
             this.stop(); // Stops the game
-            gameManager = null; // Clears current game instance
+            this.isRunning = false;
+            this.isPaused = false;
+            this.reset(); // Resets the game board
     
             endGameModal.style.display = "none"; // Hide modal
             document.getElementById("lobbyOverlay").style.display = "flex"; // Show lobby
             loadUnlockedLevels(); // Update unlocked levels
         });
     }
+    
     
 }
 
