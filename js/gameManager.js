@@ -13,7 +13,7 @@ export class GameManager {
     constructor(aiInterval = 4500) { // ✅ Default to 4500 (Easy)
         this.pieceManager = new PieceManager(this);
         this.playerChargeManager = new ChargeManager(10, 4000);
-        this.aiChargeManager = new ChargeManager(10, 4000);
+        this.aiChargeManager = new ChargeManager(10, aiInterval);
         this.aiManager = new AIManager(this, aiInterval); // ✅ Pass AI interval
 
         
@@ -253,12 +253,18 @@ export class GameManager {
     
             endGameModal.style.display = "none"; // Hide modal
             document.getElementById("lobbyOverlay").style.display = "flex"; // Show lobby
-            loadUnlockedLevels(); // Update unlocked levels
+            this.loadUnlockedLevels(); // Update unlocked levels
         });
     }
-    
+        /** ✅ Load unlocked levels from local storage */
+        loadUnlockedLevels() {
+            const unlockedLevels = JSON.parse(localStorage.getItem("unlockedLevels")) || { medium: false, hard: false };
+            console.log("🔓 Loaded Unlocked Levels:", unlockedLevels);
+        }
     
 }
+
+
 
 
     /** ✅ Unlock the next level */
