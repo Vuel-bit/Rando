@@ -306,13 +306,18 @@ function setupRulesModal() {
 
 function setupEndGameModal() {
     const endGameModal = document.getElementById("endGameModal");
-    const endGameButton = document.getElementById("endGameButton");
+    let endGameButton = document.getElementById("endGameButton");
 
     if (endGameModal) {
         endGameModal.style.display = "none"; // ✅ Ensure it's hidden at start
     }
 
     if (endGameButton) {
+        // ✅ Ensure no duplicate event listeners
+        let newEndGameButton = endGameButton.cloneNode(true);
+        endGameButton.parentNode.replaceChild(newEndGameButton, endGameButton);
+        endGameButton = newEndGameButton;
+
         endGameButton.addEventListener("click", () => {
             console.log("🔄 Returning to lobby...");
             endGameModal.style.display = "none"; // Hide modal
@@ -322,5 +327,4 @@ function setupEndGameModal() {
         console.error("❌ End Game button not found!");
     }
 }
-
 

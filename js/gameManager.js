@@ -192,29 +192,29 @@ export class GameManager {
 
     checkForWinner() {
         const winningScore = 175;
-
-          // ✅ Ensure game is actually running before checking for a winner
+    
         if (!this.isRunning) {
             console.warn("⚠️ checkForWinner() was called, but the game isn't running yet.");
             return;
         }
-
-        let scoreBlue = parseInt(document.getElementById('scoreBlue').textContent);
-        let scoreGreen = parseInt(document.getElementById('scoreGreen').textContent);
     
-        if (scoreBlue >= winningScore) {
-            this.endGame("🎉 You Won! 🏆");
-        } else if (scoreGreen >= winningScore) {
-            this.endGame("😞 You Lost. Try Again!");
+        let scoreBlue = parseInt(document.getElementById('scoreBlue').textContent) || 0;
+        let scoreGreen = parseInt(document.getElementById('scoreGreen').textContent) || 0;
+    
+        if (scoreGreen >= winningScore) { 
+            this.endGame("🎉 You Won! 🏆");  // ✅ Green is the player, so this means the player won
+        } else if (scoreBlue >= winningScore) {
+            this.endGame("😞 You Lost. Try Again!"); // ✅ Blue is the AI, so this means the AI won
         }
     }
+    
     
     endGame(message) {
         console.log("🏁 Game Over:", message);
     
         const endGameModal = document.getElementById("endGameModal");
         const endGameMessage = document.getElementById("endGameMessage");
-        const endGameButton = document.getElementById("endGameButton");
+        let endGameButton = document.getElementById("endGameButton"); // ✅ Store reference
         const returnToGameButton = document.getElementById("returnToGameButton");
         const boardSelector = document.getElementById("boardSelector");
     
@@ -235,11 +235,12 @@ export class GameManager {
             unlockNextLevel();
         }
     
-        // ✅ Ensure old event listeners are removed before adding a new one
-        endGameButton.replaceWith(endGameButton.cloneNode(true));
-        endGameButton = document.getElementById("endGameButton");
+        // ✅ Remove old event listener before adding a new one
+        let newEndGameButton = endGameButton.cloneNode(true);
+        endGameButton.parentNode.replaceChild(newEndGameButton, endGameButton);
+        endGameButton = newEndGameButton;
     
-        // ✅ When "Return to Lobby" is clicked, reset game and show lobby
+        // ✅ Add event listener to reset game and return to lobby
         endGameButton.addEventListener("click", () => {
             console.log("🔄 Resetting game & returning to lobby...");
     
