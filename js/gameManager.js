@@ -235,7 +235,14 @@ export class GameManager {
     
         // ✅ Unlock the next level if the player won
         if (message.includes("You Won")) {
-            unlockNextLevel();
+            const user = JSON.parse(localStorage.getItem("user")); // Retrieve logged-in user
+        
+            if (user) {
+                console.log("🎉 Player Won! Unlocking next level for:", user.displayName);
+                unlockNextLevel(user); // ✅ Pass the user parameter
+            } else {
+                console.warn("⚠️ No user logged in, cannot sync unlocks to Firebase.");
+            }
         }
     
         // ✅ Remove old event listener before adding a new one
