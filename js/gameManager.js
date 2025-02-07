@@ -10,11 +10,12 @@ const r = 15; // Hex Grid radius
 const a = 2 * Math.PI / 6; // constant for drawing hexes
 
 export class GameManager {
-    constructor() {
+    constructor(aiInterval = 4500) { // ✅ Default to 4500 (Easy)
         this.pieceManager = new PieceManager(this);
-        this.playerChargeManager = new ChargeManager(10, 4000); 
-        this.aiChargeManager = new ChargeManager(10, 4000); 
-        this.aiManager = new AIManager(this);
+        this.playerChargeManager = new ChargeManager(10, 4000);
+        this.aiChargeManager = new ChargeManager(10, 4000);
+        this.aiManager = new AIManager(this, aiInterval); // ✅ Pass AI interval
+
         
 
         this.starButton = new StarButton("launchStarButton", this);
@@ -190,14 +191,85 @@ export class GameManager {
     }
 
     checkForWinner() {
-        if (parseInt(document.getElementById('scoreBlue').textContent) >= 175 || 
-            parseInt(document.getElementById('scoreGreen').textContent) >= 175) {
-            this.stop();
+        const winningScore = 175;
+
+          // ✅ Ensure game is actually running before checking for a winner
+        if (!this.isRunning) {
+            console.warn("⚠️ checkForWinner() was called, but the game isn't running yet.");
             return;
         }
+
+        let scoreBlue = parseInt(document.getElementById('scoreBlue').textContent);
+        let scoreGreen = parseInt(document.getElementById('scoreGreen').textContent);
+    
+        if (scoreBlue >= winningScore) {
+            this.endGame("🎉 You Won! 🏆");
+        } else if (scoreGreen >= winningScore) {
+            this.endGame("😞 You Lost. Try Again!");
+        }
     }
+    
+    endGame(message) {
+        console.log("🏁 Game Over:", message);
+    
+        const endGameModal = document.getElementById("endGameModal");
+        const endGameMessage = document.getElementById("endGameMessage");
+        const endGameButton = document.getElementById("endGameButton");
+        const returnToGameButton = document.getElementById("returnToGameButton");
+        const boardSelector = document.getElementById("boardSelector");
+    
+        if (!endGameModal || !endGameMessage || !endGameButton || !returnToGameButton || !boardSelector) {
+            console.error("❌ End Game Modal elements missing!");
+            return;
+        }
+    
+        // ✅ Show the end game popup
+        endGameMessage.textContent = message;
+        endGameModal.style.display = "flex";
+    
+        // ✅ Disable "Return to Game" since no game is running
+        returnToGameButton.disabled = true;
+    
+        // ✅ Unlock the next level if the player won
+        if (message.includes("You Won")) {
+            unlockNextLevel();
+        }
+    
+        // ✅ Ensure old event listeners are removed before adding a new one
+        endGameButton.replaceWith(endGameButton.cloneNode(true));
+        endGameButton = document.getElementById("endGameButton");
+    
+        // ✅ When "Return to Lobby" is clicked, reset game and show lobby
+        endGameButton.addEventListener("click", () => {
+            console.log("🔄 Resetting game & returning to lobby...");
+    
+            this.stop(); // Stops the game
+            gameManager = null; // Clears current game instance
+    
+            endGameModal.style.display = "none"; // Hide modal
+            document.getElementById("lobbyOverlay").style.display = "flex"; // Show lobby
+            loadUnlockedLevels(); // Update unlocked levels
+        });
+    }
+    
 }
 
+
+    /** ✅ Unlock the next level */
+    function unlockNextLevel() {
+        const selectedBoard = localStorage.getItem("selectedBoard");
+        let unlockedLevels = JSON.parse(localStorage.getItem("unlockedLevels")) || { medium: false, hard: false };
+
+        if (selectedBoard === "board1" && !unlockedLevels.medium) {
+            console.log("🔓 Unlocking Medium Level!");
+            unlockedLevels.medium = true;
+        } else if (selectedBoard === "board2" && !unlockedLevels.hard) {
+            console.log("🔓 Unlocking Hard Level!");
+            unlockedLevels.hard = true;
+        }
+
+        localStorage.setItem("unlockedLevels", JSON.stringify(unlockedLevels));
+    }
 
 function generateHexGrid(ctx, width, height, hexagons, pieces, directions){
         
@@ -329,6 +401,26 @@ function checkNeighborProperties(hex, directions, hexagons) {
     }
 
     return false;
+}
+
+function saveProgress(score) {
+    const user = JSON.parse(localStorage.getItem("user"));
+    if (user) {
+        localStorage.setItem(`progress_${user.uid}`, JSON.stringify({ score }));
+        console.log("Progress saved for", user.name);
+    }
+}
+
+function loadProgress() {
+    const user = JSON.parse(localStorage.getItem("user"));
+    if (user) {
+        const progress = JSON.parse(localStorage.getItem(`progress_${user.uid}`));
+        if (progress) {
+            console.log(`Welcome back, ${user.name}! Your last score was: ${progress.score}`);
+            return progress.score;
+        }
+    }
+    return 0;
 }
 
 

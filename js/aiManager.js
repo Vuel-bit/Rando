@@ -1,24 +1,27 @@
 export class AIManager {
-    constructor(gameManager) {
+    constructor(gameManager, aiInterval = 4500) {
         this.gameManager = gameManager;
         this.pieceManager = gameManager.pieceManager;
         this.chargeManager = gameManager.aiChargeManager;
-        this.aiInterval = null;
+        this.aiInterval = aiInterval;
+        this.aiTimer = null;
     }
 
-    startAI(interval = 4000) {
-        if (this.aiInterval) return; // Prevent multiple intervals
+    startAI() {
+        if (this.aiTimer) return; // Prevent multiple intervals
 
+        console.log(`🤖 AI starting with interval: ${this.aiInterval}ms`);
+        this.makeMove(); // Initial move
 
-
-        this.aiInterval = setInterval(() => {
+        this.aiTimer = setInterval(() => {
             this.makeMove();
-        }, interval);
+        }, this.aiInterval);
     }
 
     stopAI() {
-        clearInterval(this.aiInterval);
-        this.aiInterval = null;
+        console.log("🤖 AI stopped.");
+        clearInterval(this.aiTimer);
+        this.aiTimer = null;
     }
 
     makeMove() {

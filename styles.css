@@ -194,3 +194,143 @@
             }
         }
 
+        #lobbyOverlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            text-align: center;
+            z-index: 999;
+        }
+        
+        #lobbyOverlay button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        
+        #lobbyOverlay button:hover {
+            background-color: #45a049;
+        }
+        
+        #lobbyOverlay select {
+            padding: 10px;
+            font-size: 16px;
+        }
+        
+        /* ✅ Ensure Rules Modal is HIDDEN by default */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* ✅ Ensure modal only appears when explicitly triggered */
+        .modal-content {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            width: 80%;
+            max-width: 500px;
+            text-align: center;
+            box-shadow: 0px 0px 10px 2px rgba(255, 255, 255, 0.2);
+        }
+
+                /* Ensure Rules Modal Content is Left-Aligned */
+        #rulesModal .modal-content {
+            text-align: left; /* ✅ Left-justifies all text */
+            padding: 20px;
+            border-radius: 10px;
+            width: 80%;
+            max-width: 500px;
+            box-shadow: 0px 0px 10px 2px rgba(255, 255, 255, 0.2);
+        }
+
+        /* Adjust List Formatting for Better Alignment */
+        #rulesModal ul {
+            padding-left: 20px; /* ✅ Indents list items for clarity */
+        }
+
+
+        /* Close Button */
+        .close-button {
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            color: red;
+        }
+        .close-button:hover {
+            color: darkred;
+        }
+
+        /* End Game Modal - Hidden by Default */
+    #endGameModal {
+        display: none;
+        position: fixed;
+        z-index: 1000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.7);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    /* Modal Content Box */
+    #endGameModal .modal-content {
+        background: white;
+        padding: 20px;
+        border-radius: 10px;
+        width: 80%;
+        max-width: 500px;
+        text-align: center;
+        box-shadow: 0px 0px 10px 2px rgba(255, 255, 255, 0.2);
+    }
+
+    /* Disable "Return to Game" Button */
+    #returnToGameButton:disabled {
+        background-color: gray;
+        cursor: not-allowed;
+        opacity: 0.5;
+    }
+
+    #logoutButton {
+        display: none; /* ✅ Keep it hidden until user logs in */
+        margin: 10px auto; /* ✅ Centers the button horizontally */
+        padding: 10px 20px;
+        font-size: 16px;
+        background-color: #dc3545; /* Red logout button */
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        text-align: center; /* Ensures text inside the button is centered */
+        display: block; /* Ensure it behaves properly */
+    }
+    
+    #logoutButton:hover {
+        background-color: #c82333; /* Darker red on hover */
+    }
+    

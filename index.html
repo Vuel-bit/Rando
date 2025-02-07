@@ -8,9 +8,9 @@
 </head>
 <body>
     <div id="container">
+
         <!-- Header Section with Start Game, Scoreboard, and Pause -->
         <div id="header">
-            <button id="startButton">Start Game</button>
             <div id="scoreBoard">
                 <div class="score blue"><strong>Score:</strong> <span id="scoreBlue">0</span></div>
                 <div class="score green"><strong>Score:</strong> <span id="scoreGreen">0</span></div>
@@ -33,7 +33,107 @@
         </div>
     </div>
 
-    <!-- Link to JavaScript -->
+        <!-- Lobby Overlay -->
+    <!-- ✅ Updated Lobby Overlay -->
+    <div id="lobbyOverlay">
+        <h2>Rando</h2>
+
+        <div id="loginSection">
+            <button id="loginButton">Login with Google</button>
+            <button id="logoutButton" style="display: none;">Logout</button>
+            <p id="playerInfo"></p>
+        </div>
+
+        <div id="gameSettings">
+            <h3>Choose Your Board</h3>
+            <select id="boardSelector">
+                <option value="board1">Easy</option>
+                <option value="board2" disabled>Medium</option>
+                <option value="board3" disabled>Hard</option>
+            </select>
+        </div>
+        
+
+        <!-- ✅ Removed "Game Rules" label, kept only button -->
+        <button id="viewRulesButton">View Rules</button>
+
+        <!-- ✅ Added "Return to Game" button -->
+        <button id="returnToGameButton">Return to Game</button>
+
+        <button id="startGameButton">Start Game</button>
+    </div>
+
+    <!-- End Game Popup (Hidden by Default) -->
+    <div id="endGameModal" class="modal">
+        <div class="modal-content">
+            <h2 id="endGameMessage">Game Over</h2>
+            <button id="endGameButton">Return to Lobby</button>
+        </div>
+    </div>
+
+    <div id="rulesModal" class="modal">
+        <div class="modal-content">
+            <span class="close-button">&times;</span>
+            <h2>Rando Rules!</h2>
+    
+            <p>The first to capture 175 hexes wins.</p>
+    
+            <h3>Combat</h3>
+            <ul>
+                <li>If two opposing pieces collide, both will be destroyed, except:</li>
+                <li>- A rectangle will not destroy a square.</li>
+                <li>- A triangle will destroy a rectangle only 50% of the time.</li>
+            </ul>
+    
+            <h3>Piece Abilities</h3>
+            <ul>
+                <li>🔴 <strong>Circle</strong> - Bombs enemy territory.</li>
+                <li>🔳 <strong>Rectangle</strong> - Captures the nearest unoccupied hex.</li>
+                <li>🔷 <strong>Square</strong> - Defends your hexes.</li>
+                <li>🔺 <strong>Triangle</strong> - Shoots down opponent's pieces.</li>
+            </ul>
+    
+            <h3>Boost Button (⭐)</h3>
+            <p>
+                When 10 of your squares are destroyed by triangles, the boost button activates.
+                When you press it, you get 5 charges (max is still 10).
+            </p>
+        </div>
+    </div>
+    
+
+    <!-- Remove the first reference to main.js -->
+    <!-- Load Firebase first -->
+   <!-- ✅ Load Firebase SDK FIRST -->
+   <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-app.js";
+    import { getAuth, GoogleAuthProvider } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-auth.js";
+
+    // Firebase Configuration
+    const firebaseConfig = {
+        apiKey: "AIzaSyBEHMoyXjWt2lRlTy4jHPpycCFf9qZGML4",
+        authDomain: "rando-2141.firebaseapp.com",
+        projectId: "rando-2141",
+        storageBucket: "rando-2141.firebasestorage.app",
+        messagingSenderId: "159049931264",
+        appId: "1:159049931264:web:db08a4a4d7d9564e71d6e5",
+        measurementId: "G-BR4NEKT0B8"
+    };
+
+    // ✅ Initialize Firebase & Auth
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const provider = new GoogleAuthProvider();
+
+    // ✅ Store in `window` so `main.js` can use it
+    window.firebaseAuth = auth;
+    window.firebaseProvider = provider;
+    </script>
+
+    <!-- ✅ Load main.js AFTER Firebase -->
     <script type="module" src="js/main.js"></script>
+
+  
+
 </body>
 </html>
