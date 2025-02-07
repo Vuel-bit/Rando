@@ -85,15 +85,26 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
 
-    onAuthStateChanged(auth, (user) => {
+    onAuthStateChanged(auth, async (user) => {
         if (user) {
             console.log("✅ User already logged in:", user);
+    
+            // Load stored unlocks from Firebase
+            const db = getFirestore();
+            const userDocRef = doc(db, "users", user.uid);
+            const userDoc = await getDoc(userDocRef);
+            
+            if (userDoc.exists()) {
+                localStorage.setItem("unlockedLevels", JSON.stringify(userDoc.data().unlockedLevels));
+            }
+    
             updateLobbyUI(user);
         } else {
             console.log("❌ No user logged in");
             updateLobbyUI(null);
         }
     });
+    
 
 
 

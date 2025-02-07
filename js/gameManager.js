@@ -256,32 +256,51 @@ export class GameManager {
             this.loadUnlockedLevels(); // Update unlocked levels
         });
     }
-        /** ✅ Load unlocked levels from local storage */
-        loadUnlockedLevels() {
-            const unlockedLevels = JSON.parse(localStorage.getItem("unlockedLevels")) || { medium: false, hard: false };
-            console.log("🔓 Loaded Unlocked Levels:", unlockedLevels);
+    loadUnlockedLevels() {
+        let unlockedLevels = JSON.parse(localStorage.getItem("unlockedLevels"));
+    
+        // Ensure default values if storage is empty
+        if (!unlockedLevels) {
+            unlockedLevels = { medium: false, hard: false };
+            localStorage.setItem("unlockedLevels", JSON.stringify(unlockedLevels));
         }
+    
+        console.log("🔓 Loaded Unlocked Levels:", unlockedLevels);
+    
+        const boardSelector = document.getElementById("boardSelector");
+        if (boardSelector) {
+            boardSelector.options[1].disabled = !unlockedLevels.medium;
+            boardSelector.options[2].disabled = !unlockedLevels.hard;
+        }
+    }
     
 }
 
 
 
 
-    /** ✅ Unlock the next level */
-    function unlockNextLevel() {
-        const selectedBoard = localStorage.getItem("selectedBoard");
-        let unlockedLevels = JSON.parse(localStorage.getItem("unlockedLevels")) || { medium: false, hard: false };
+function unlockNextLevel(user) {
+    if (!user) return; // Only save if logged in
 
-        if (selectedBoard === "board1" && !unlockedLevels.medium) {
-            console.log("🔓 Unlocking Medium Level!");
-            unlockedLevels.medium = true;
-        } else if (selectedBoard === "board2" && !unlockedLevels.hard) {
-            console.log("🔓 Unlocking Hard Level!");
-            unlockedLevels.hard = true;
-        }
+    const selectedBoard = localStorage.getItem("selectedBoard");
+    let unlockedLevels = JSON.parse(localStorage.getItem("unlockedLevels")) || { medium: false, hard: false };
 
-        localStorage.setItem("unlockedLevels", JSON.stringify(unlockedLevels));
+    if (selectedBoard === "board1" && !unlockedLevels.medium) {
+        console.log("🔓 Unlocking Medium Level!");
+        unlockedLevels.medium = true;
+    } else if (selectedBoard === "board2" && !unlockedLevels.hard) {
+        console.log("🔓 Unlocking Hard Level!");
+        unlockedLevels.hard = true;
     }
+
+    localStorage.setItem("unlockedLevels", JSON.stringify(unlockedLevels));
+
+    // ✅ Also store in Firebase
+    const db = getFirestore();
+    const userDocRef = doc(db, "users", user.uid);
+    setDoc(userDocRef, { unlockedLevels }, { merge: true });
+}
+
 
 function generateHexGrid(ctx, width, height, hexagons, pieces, directions){
         
