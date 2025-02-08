@@ -9,16 +9,7 @@ import { StarButton } from "./buttonManager.js";
 const r = 15; // Hex Grid radius 
 const a = 2 * Math.PI / 6; // constant for drawing hexes
 
-function debugLog(message) {
-    console.log(message); // ✅ Also log to the browser console
-    const debugBox = document.getElementById("debugBox");
-    if (debugBox) {
-        debugBox.innerHTML += `<p>${message}</p>`;
-        debugBox.scrollTop = debugBox.scrollHeight; // ✅ Auto-scroll to latest log
-    } else {
-        console.error("❌ debugBox not found in DOM! Check index.html.");
-    }
-}
+
 
 export class GameManager {
     constructor(aiInterval = 4500) { // ✅ Default to 4500 (Easy)
@@ -238,10 +229,10 @@ export class GameManager {
             const user = JSON.parse(localStorage.getItem("user")); // ✅ Retrieve logged-in user
     
             if (user && user.uid) {
-                debugLog(`🎉 Player Won! Unlocking next level for: ${user.name}`);
+                
                 unlockNextLevel(user); // ✅ Pass the user object
             } else {
-                debugLog("⚠️ No user logged in, cannot sync unlocks to Firebase.");
+               
             }
         }
 
@@ -311,40 +302,40 @@ export class GameManager {
 
 async function unlockNextLevel(user) {
     if (!user) {
-        debugLog("⚠️ No user logged in. Cannot sync to Firebase.");
+        
         return;
     }
 
-    debugLog("🔄 Checking if next level should be unlocked...");
+   
 
     const selectedBoard = localStorage.getItem("selectedBoard");
     let unlockedLevels = JSON.parse(localStorage.getItem("unlockedLevels")) || { medium: false, hard: false };
 
     if (selectedBoard === "board1" && !unlockedLevels.medium) {
-        debugLog("🔓 Unlocking Medium Level!");
+        
         unlockedLevels.medium = true;
     } else if (selectedBoard === "board2" && !unlockedLevels.hard) {
-        debugLog("🔓 Unlocking Hard Level!");
+       
         unlockedLevels.hard = true;
     } else {
-        debugLog("⚠️ No new levels to unlock.");
+       
         return;
     }
 
     localStorage.setItem("unlockedLevels", JSON.stringify(unlockedLevels));
-    debugLog("✅ LocalStorage updated with new unlocks.");
+   
 
     try {
         const db = window.firebaseDB;
         if (!db) throw new Error("Firestore not initialized!");
 
         const userDocRef = doc(db, "users", user.uid);
-        debugLog("📤 Writing to Firestore...");
+       
         await setDoc(userDocRef, { unlockedLevels }, { merge: true });
 
-        debugLog("✅ Successfully updated Firebase.");
+       
     } catch (error) {
-        debugLog(`❌ Failed to update Firebase: ${error}`);
+        
     }
 }
 

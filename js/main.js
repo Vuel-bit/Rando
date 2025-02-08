@@ -45,16 +45,7 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 
-function debugLog(message) {
-    console.log(message); // ✅ Also log to the browser console
-    const debugBox = document.getElementById("debugBox");
-    if (debugBox) {
-        debugBox.innerHTML += `<p>${message}</p>`;
-        debugBox.scrollTop = debugBox.scrollHeight; // ✅ Auto-scroll to latest log
-    } else {
-        console.error("❌ debugBox not found in DOM! Check index.html.");
-    }
-}
+
 
     function initializeGame() {
         console.log("Game initialized.");
@@ -124,7 +115,7 @@ function debugLog(message) {
 
     onAuthStateChanged(auth, async (user) => {
         if (user) {
-            debugLog("✅ User logged in: " + user.displayName);
+           
     
             try {
                 const db = window.firebaseDB;
@@ -135,7 +126,7 @@ function debugLog(message) {
     
                 if (userDoc.exists()) {
                     const unlockedLevels = userDoc.data().unlockedLevels;
-                    debugLog("📥 Loaded Unlocked Levels from Firebase: " + JSON.stringify(unlockedLevels));
+                    
     
                     // ✅ Store user info in localStorage
                     localStorage.setItem("unlockedLevels", JSON.stringify(unlockedLevels));
@@ -143,7 +134,7 @@ function debugLog(message) {
     
                     loadUnlockedLevels();
                 } else {
-                    debugLog("⚠️ No Firestore record for this user. Creating one.");
+                   
                     const defaultLevels = { medium: false, hard: false };
                     localStorage.setItem("unlockedLevels", JSON.stringify(defaultLevels));
                     localStorage.setItem("user", JSON.stringify({ uid: user.uid, name: user.displayName }));
@@ -151,10 +142,10 @@ function debugLog(message) {
                     await setDoc(userDocRef, { unlockedLevels: defaultLevels }, { merge: true });
                 }
             } catch (error) {
-                debugLog(`❌ Error loading unlocks from Firebase: ${error}`);
+               
             }
         } else {
-            debugLog("❌ No user logged in");
+            
             localStorage.removeItem("unlockedLevels");
             localStorage.removeItem("user");
         }
