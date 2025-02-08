@@ -102,33 +102,7 @@
     </div>
     
 
-    <!-- Remove the first reference to main.js -->
-    <!-- Load Firebase first -->
-   <!-- ✅ Load Firebase SDK FIRST -->
-   <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-app.js";
-    import { getAuth, GoogleAuthProvider } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-auth.js";
 
-    // Firebase Configuration
-    const firebaseConfig = {
-        apiKey: "AIzaSyBEHMoyXjWt2lRlTy4jHPpycCFf9qZGML4",
-        authDomain: "rando-2141.firebaseapp.com",
-        projectId: "rando-2141",
-        storageBucket: "rando-2141.firebasestorage.app",
-        messagingSenderId: "159049931264",
-        appId: "1:159049931264:web:db08a4a4d7d9564e71d6e5",
-        measurementId: "G-BR4NEKT0B8"
-    };
-
-    // ✅ Initialize Firebase & Auth
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-    const provider = new GoogleAuthProvider();
-
-    // ✅ Store in `window` so `main.js` can use it
-    window.firebaseAuth = auth;
-    window.firebaseProvider = provider;
-    </script>
 
     <!-- ✅ Load main.js AFTER Firebase -->
     <script type="module" src="js/main.js"></script>

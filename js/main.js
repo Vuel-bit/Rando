@@ -1,4 +1,6 @@
-import { getAuth, signInWithPopup, signOut, onAuthStateChanged, GoogleAuthProvider } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-auth.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-app.js";
+import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-auth.js";
+import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-firestore.js";
 import { GameManager } from "./gameManager.js";
 import { ChargeManager } from "./chargeManager.js";
 import { ButtonManager } from "./buttonManager.js";
@@ -10,14 +12,38 @@ console.log("🚀 Checking Firebase Provider:", window.firebaseProvider);
 let gameManager;
 
 
+// ✅ Firebase Configuration
+const firebaseConfig = {
+    apiKey: "AIzaSyBEHMoyXjWt2lRlTy4jHPpycCFf9qZGML4",
+    authDomain: "rando-2141.firebaseapp.com",
+    projectId: "rando-2141",
+    storageBucket: "rando-2141.firebasestorage.app",
+    messagingSenderId: "159049931264",
+    appId: "1:159049931264:web:db08a4a4d7d9564e71d6e5",
+    measurementId: "G-BR4NEKT0B8"
+};
+
+// ✅ Initialize Firebase
+const app = initializeApp(firebaseConfig);
+
+// ✅ Initialize Firebase Services
+const auth = getAuth(app);
+const provider = new GoogleAuthProvider();
+const db = getFirestore(app);  // <-- Added Firestore initialization
+
+// ✅ Store Firebase services in `window` so other files can use them
+window.firebaseAuth = auth;
+window.firebaseProvider = provider;
+window.firebaseDB = db;  // Store Firestore globally
+
+console.log("🔥 Firebase Initialized:", app);
+
 document.addEventListener("DOMContentLoaded", () => {
     setupLobby();
     setupRulesModal();
     setupEndGameModal();
 });
 
-    const auth = window.firebaseAuth || getAuth();
-    const provider = window.firebaseProvider || new GoogleAuthProvider();
 
     function initializeGame() {
         console.log("Game initialized.");
