@@ -45,6 +45,17 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 
+function debugLog(message) {
+    console.log(message); // ✅ Also log to the browser console
+    const debugBox = document.getElementById("debugBox");
+    if (debugBox) {
+        debugBox.innerHTML += `<p>${message}</p>`;
+        debugBox.scrollTop = debugBox.scrollHeight; // ✅ Auto-scroll to latest log
+    } else {
+        console.error("❌ debugBox not found in DOM! Check index.html.");
+    }
+}
+
     function initializeGame() {
         console.log("Game initialized.");
     
@@ -213,14 +224,6 @@ function setupLobby() {
         return;
     }
 
-    function debugLog(message) {
-        const debugBox = document.getElementById("debugBox");
-        if (debugBox) {
-            debugBox.innerHTML += `<p>${message}</p>`;
-            debugBox.scrollTop = debugBox.scrollHeight; // Auto-scroll
-        }
-    }
-    
 
     // ✅ Check if user is already logged in
     const auth = getAuth();
