@@ -285,11 +285,11 @@ function setupLobby() {
     // ✅ Start game button initializes game before hiding lobby
     startGameButton.addEventListener("click", () => {
         console.log("🔹 Start Game button clicked!");
-        initializeGame();
+        
 
         const selectedBoard = boardSelector.value;
         localStorage.setItem("selectedBoard", selectedBoard);
-
+        initializeGame();
         console.log("✅ Hiding lobby...");
         lobbyOverlay.style.display = "none"; // Hide lobby
     });
