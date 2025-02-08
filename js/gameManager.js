@@ -12,7 +12,7 @@ const a = 2 * Math.PI / 6; // constant for drawing hexes
 export class GameManager {
     constructor(aiInterval = 4500) { // ✅ Default to 4500 (Easy)
         this.pieceManager = new PieceManager(this);
-        this.playerChargeManager = new ChargeManager(10, 4000);
+        this.playerChargeManager = new ChargeManager(10, 1000);
         this.aiChargeManager = new ChargeManager(10, aiInterval);
         this.aiManager = new AIManager(this, aiInterval); // ✅ Pass AI interval
 
@@ -222,7 +222,18 @@ export class GameManager {
             console.error("❌ End Game Modal elements missing!");
             return;
         }
+
+        if (message.includes("You Won")) {
+            const user = JSON.parse(localStorage.getItem("user"));
     
+            if (user) {
+                debugLog(`🎉 Player Won! Unlocking next level for: ${user.displayName}`);
+                unlockNextLevel(user);
+            } else {
+                debugLog("⚠️ No user logged in, cannot sync unlocks to Firebase.");
+            }
+        }
+
         // ✅ Show the end game popup
         endGameMessage.textContent = message;
         endGameModal.style.display = "flex";
@@ -288,38 +299,43 @@ export class GameManager {
 
 async function unlockNextLevel(user) {
     if (!user) {
-        console.warn("⚠️ No user logged in. Cannot sync to Firebase.");
+        debugLog("⚠️ No user logged in. Cannot sync to Firebase.");
         return;
     }
+
+    debugLog("🔄 Checking if next level should be unlocked...");
 
     const selectedBoard = localStorage.getItem("selectedBoard");
     let unlockedLevels = JSON.parse(localStorage.getItem("unlockedLevels")) || { medium: false, hard: false };
 
     if (selectedBoard === "board1" && !unlockedLevels.medium) {
-        console.log("🔓 Unlocking Medium Level!");
+        debugLog("🔓 Unlocking Medium Level!");
         unlockedLevels.medium = true;
     } else if (selectedBoard === "board2" && !unlockedLevels.hard) {
-        console.log("🔓 Unlocking Hard Level!");
+        debugLog("🔓 Unlocking Hard Level!");
         unlockedLevels.hard = true;
+    } else {
+        debugLog("⚠️ No new levels to unlock.");
+        return;
     }
 
-    // ✅ Update localStorage immediately
     localStorage.setItem("unlockedLevels", JSON.stringify(unlockedLevels));
+    debugLog("✅ LocalStorage updated with new unlocks.");
 
     try {
         const db = window.firebaseDB;
         if (!db) throw new Error("Firestore not initialized!");
 
         const userDocRef = doc(db, "users", user.uid);
-
-        // ✅ Force Firestore to store the unlock data
+        debugLog("📤 Writing to Firestore...");
         await setDoc(userDocRef, { unlockedLevels }, { merge: true });
 
-        console.log("✅ Successfully updated Firebase with:", unlockedLevels);
+        debugLog("✅ Successfully updated Firebase.");
     } catch (error) {
-        console.error("❌ Failed to update Firebase:", error);
+        debugLog(`❌ Failed to update Firebase: ${error}`);
     }
 }
+
 
 
 

@@ -113,7 +113,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     onAuthStateChanged(auth, async (user) => {
         if (user) {
-            console.log("✅ User already logged in:", user);
+            debugLog("✅ User logged in: " + user.displayName);
     
             try {
                 const db = window.firebaseDB;
@@ -124,34 +124,25 @@ document.addEventListener("DOMContentLoaded", () => {
     
                 if (userDoc.exists()) {
                     const unlockedLevels = userDoc.data().unlockedLevels;
-                    console.log("📥 Loaded Unlocked Levels from Firebase:", unlockedLevels);
+                    debugLog("📥 Loaded Unlocked Levels from Firebase: " + JSON.stringify(unlockedLevels));
     
-                    // ✅ Prevent overwriting with empty data
-                    if (unlockedLevels) {
-                        localStorage.setItem("unlockedLevels", JSON.stringify(unlockedLevels));
-                        loadUnlockedLevels(); // ✅ Update UI
-                    } else {
-                        console.warn("⚠️ User exists but no unlock data in Firestore. Setting defaults.");
-                        const defaultLevels = { medium: false, hard: false };
-                        localStorage.setItem("unlockedLevels", JSON.stringify(defaultLevels));
-                        await setDoc(userDocRef, { unlockedLevels: defaultLevels }, { merge: true });
-                    }
+                    localStorage.setItem("unlockedLevels", JSON.stringify(unlockedLevels));
+                    loadUnlockedLevels();
                 } else {
-                    console.warn("⚠️ No Firestore record for this user. Creating one.");
+                    debugLog("⚠️ No Firestore record for this user. Creating one.");
                     const defaultLevels = { medium: false, hard: false };
                     localStorage.setItem("unlockedLevels", JSON.stringify(defaultLevels));
                     await setDoc(userDocRef, { unlockedLevels: defaultLevels }, { merge: true });
                 }
             } catch (error) {
-                console.error("❌ Error loading unlocks from Firebase:", error);
+                debugLog(`❌ Error loading unlocks from Firebase: ${error}`);
             }
-    
-            updateLobbyUI(user);
         } else {
-            console.log("❌ No user logged in");
-            updateLobbyUI(null);
+            debugLog("❌ No user logged in");
+            localStorage.removeItem("unlockedLevels");
         }
     });
+    
     
     
     
@@ -222,6 +213,13 @@ function setupLobby() {
         return;
     }
 
+    function debugLog(message) {
+        const debugBox = document.getElementById("debugBox");
+        if (debugBox) {
+            debugBox.innerHTML += `<p>${message}</p>`;
+            debugBox.scrollTop = debugBox.scrollHeight; // Auto-scroll
+        }
+    }
     
 
     // ✅ Check if user is already logged in
