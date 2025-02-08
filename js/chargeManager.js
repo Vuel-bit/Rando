@@ -49,12 +49,11 @@ export class ChargeManager {
     
     consumeCharge() {
         if (this.currentCharges > 0) {
-            this.currentCharges--;  
-  
-            this.updateButtonDisplays(); 
-            this.startRecharging(); 
+            this.currentCharges--;
+            this.updateButtonDisplays();
+            if (!this.refreshInterval) this.startRecharging();
         }
-    }  
+    } 
 
     reset() {
         this.currentCharges = 5;
