@@ -40,6 +40,11 @@ export class AIManager {
     }
 
     evaluateMove() {
+        if (this.chargeManager.currentCharges >= 10) {
+            this.throwPieces(3); // Ensure AI throws 3 pieces if it has 10 charges
+            return;
+        }
+
         const decisionRoll = Math.random();
         if (decisionRoll < 0.60) {
             return; // 60% of the time, throw no pieces
