@@ -9,6 +9,17 @@ import { StarButton } from "./buttonManager.js";
 const r = 15; // Hex Grid radius 
 const a = 2 * Math.PI / 6; // constant for drawing hexes
 
+function debugLog(message) {
+    console.log(message); // ✅ Also log to the browser console
+    const debugBox = document.getElementById("debugBox");
+    if (debugBox) {
+        debugBox.innerHTML += `<p>${message}</p>`;
+        debugBox.scrollTop = debugBox.scrollHeight; // ✅ Auto-scroll to latest log
+    } else {
+        console.error("❌ debugBox not found in DOM! Check index.html.");
+    }
+}
+
 export class GameManager {
     constructor(aiInterval = 4500) { // ✅ Default to 4500 (Easy)
         this.pieceManager = new PieceManager(this);
@@ -274,6 +285,7 @@ export class GameManager {
             this.loadUnlockedLevels(); // Update unlocked levels
         });
     }
+
     loadUnlockedLevels() {
         let unlockedLevels = JSON.parse(localStorage.getItem("unlockedLevels"));
     
