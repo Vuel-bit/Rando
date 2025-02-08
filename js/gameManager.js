@@ -159,6 +159,8 @@ export class GameManager {
              
         this.pieceManager.blueBoostCounter = 0;
         this.pieceManager.greenBoostCounter = 0;
+        this.starButton.updateText(this.pieceManager.greenBoostCounter);
+
     }
 
     stop() {
