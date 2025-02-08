@@ -115,13 +115,35 @@ document.addEventListener("DOMContentLoaded", () => {
         if (user) {
             console.log("✅ User already logged in:", user);
     
-            // Load stored unlocks from Firebase
-            const db = getFirestore();
-            const userDocRef = doc(db, "users", user.uid);
-            const userDoc = await getDoc(userDocRef);
-            
-            if (userDoc.exists()) {
-                localStorage.setItem("unlockedLevels", JSON.stringify(userDoc.data().unlockedLevels));
+            try {
+                const db = window.firebaseDB;
+                if (!db) throw new Error("Firestore not initialized!");
+    
+                const userDocRef = doc(db, "users", user.uid);
+                const userDoc = await getDoc(userDocRef);
+    
+                if (userDoc.exists()) {
+                    const unlockedLevels = userDoc.data().unlockedLevels;
+                    console.log("📥 Loaded Unlocked Levels from Firebase:", unlockedLevels);
+    
+                    // ✅ Prevent overwriting with empty data
+                    if (unlockedLevels) {
+                        localStorage.setItem("unlockedLevels", JSON.stringify(unlockedLevels));
+                        loadUnlockedLevels(); // ✅ Update UI
+                    } else {
+                        console.warn("⚠️ User exists but no unlock data in Firestore. Setting defaults.");
+                        const defaultLevels = { medium: false, hard: false };
+                        localStorage.setItem("unlockedLevels", JSON.stringify(defaultLevels));
+                        await setDoc(userDocRef, { unlockedLevels: defaultLevels }, { merge: true });
+                    }
+                } else {
+                    console.warn("⚠️ No Firestore record for this user. Creating one.");
+                    const defaultLevels = { medium: false, hard: false };
+                    localStorage.setItem("unlockedLevels", JSON.stringify(defaultLevels));
+                    await setDoc(userDocRef, { unlockedLevels: defaultLevels }, { merge: true });
+                }
+            } catch (error) {
+                console.error("❌ Error loading unlocks from Firebase:", error);
             }
     
             updateLobbyUI(user);
@@ -130,6 +152,9 @@ document.addEventListener("DOMContentLoaded", () => {
             updateLobbyUI(null);
         }
     });
+    
+    
+    
     
 
 
@@ -203,19 +228,6 @@ function setupLobby() {
     const auth = getAuth();
     const provider = new GoogleAuthProvider();
 
-    onAuthStateChanged(auth, (user) => {
-        if (user) {
-            console.log("✅ User already logged in:", user.displayName);
-            playerInfo.textContent = `Welcome, ${user.displayName}`;
-            loginButton.style.display = "none";
-            logoutButton.style.display = "block";
-        } else {
-            playerInfo.textContent = "";
-            loginButton.style.display = "block";
-            logoutButton.style.display = "none";
-        }
-    });
-
     loadUnlockedLevels();
 
     // ✅ Handle login
@@ -230,9 +242,22 @@ function setupLobby() {
             .catch((error) => console.error("❌ Login failed:", error));
     });
 
-    // ✅ Handle logout
-    logoutButton.addEventListener("click", () => {
+        logoutButton.addEventListener("click", async () => {  // 🔹 Add `async` here
         console.log("🔹 Logout button clicked!");
+    
+        try {
+            await signOut(auth);  // ✅ Now `await` works correctly
+            console.log("✅ User successfully logged out.");
+    
+            // ✅ Clear localStorage to remove unlock progress from the previous user
+            localStorage.removeItem("unlockedLevels");
+            localStorage.removeItem("user");
+    
+            // ✅ Refresh the page to ensure a clean state for the next user
+            window.location.reload();
+        } catch (error) {
+            console.error("❌ Logout failed:", error);
+        }
         signOut(auth).then(() => {
             playerInfo.textContent = "";
             loginButton.style.display = "block";

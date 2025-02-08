@@ -286,7 +286,7 @@ export class GameManager {
 
 
 
-function unlockNextLevel(user) {
+async function unlockNextLevel(user) {
     if (!user) {
         console.warn("⚠️ No user logged in. Cannot sync to Firebase.");
         return;
@@ -303,20 +303,26 @@ function unlockNextLevel(user) {
         unlockedLevels.hard = true;
     }
 
+    // ✅ Update localStorage immediately
     localStorage.setItem("unlockedLevels", JSON.stringify(unlockedLevels));
 
     try {
-        const db = window.firebaseDB;  // ✅ Use the global Firestore instance
+        const db = window.firebaseDB;
         if (!db) throw new Error("Firestore not initialized!");
 
         const userDocRef = doc(db, "users", user.uid);
-        setDoc(userDocRef, { unlockedLevels }, { merge: true })
-            .then(() => console.log("✅ Successfully updated Firebase:", unlockedLevels))
-            .catch((error) => console.error("❌ Firebase update failed:", error));
+
+        // ✅ Force Firestore to store the unlock data
+        await setDoc(userDocRef, { unlockedLevels }, { merge: true });
+
+        console.log("✅ Successfully updated Firebase with:", unlockedLevels);
     } catch (error) {
-        console.error("❌ Error in unlockNextLevel:", error);
+        console.error("❌ Failed to update Firebase:", error);
     }
 }
+
+
+
 
 
 
