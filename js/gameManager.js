@@ -14,7 +14,7 @@ const a = 2 * Math.PI / 6; // constant for drawing hexes
 export class GameManager {
     constructor(aiInterval = 4500) { // ✅ Default to 4500 (Easy)
         this.pieceManager = new PieceManager(this);
-        this.playerChargeManager = new ChargeManager(10, 1000);
+        this.playerChargeManager = new ChargeManager(10, 4000);
         this.aiChargeManager = new ChargeManager(10, aiInterval);
         this.aiManager = new AIManager(this, aiInterval); // ✅ Pass AI interval
 
