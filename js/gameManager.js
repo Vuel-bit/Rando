@@ -424,6 +424,7 @@ function drawHexagon(ctx, x, y, color){
         ctx.lineTo(x + r * Math.cos(a * i), y + r * Math.sin(a * i));
     }
     ctx.closePath();
+    ctx.strokeStyle = "white";
     ctx.stroke();
  
             if (color) {       

@@ -249,11 +249,8 @@ export class PieceManager {
         }
 
         if (this.blueBoostCounter >= 10) {
-            this.gameManager.aiManager.makeMove();
-            this.gameManager.aiManager.makeMove();
-            this.gameManager.aiManager.makeMove();
-            this.gameManager.aiManager.makeMove();
-            this.gameManager.aiManager.makeMove();
+            this.gameManager.aiManager.handleBoost();
+
             this.blueBoostCounter = 0;
         }
 

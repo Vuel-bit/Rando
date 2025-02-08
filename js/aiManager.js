@@ -31,12 +31,15 @@ export class AIManager {
         this.halfIntervalCount = 0;
     }
 
-    evaluateMove() {
-        if (this.chargeManager.currentCharges >= 10) {
-            this.throwPieces(3); // If AI has 10 charges, throw 3 pieces
-            return;
+    handleBoost() {
+        while (this.chargeManager.currentCharges > 4) {
+            this.throwPieces(1); // Reduce charges to 4
         }
+        this.chargeManager.currentCharges += 5; // Add 5 charges
+        console.log(`🤖 AI Boost Activated! New Charges: ${this.chargeManager.currentCharges}`);
+    }
 
+    evaluateMove() {
         const decisionRoll = Math.random();
         if (decisionRoll < 0.60) {
             return; // 60% of the time, throw no pieces
