@@ -235,11 +235,11 @@ export class GameManager {
         }
 
         if (message.includes("You Won")) {
-            const user = JSON.parse(localStorage.getItem("user"));
+            const user = JSON.parse(localStorage.getItem("user")); // ✅ Retrieve logged-in user
     
-            if (user) {
-                debugLog(`🎉 Player Won! Unlocking next level for: ${user.displayName}`);
-                unlockNextLevel(user);
+            if (user && user.uid) {
+                debugLog(`🎉 Player Won! Unlocking next level for: ${user.name}`);
+                unlockNextLevel(user); // ✅ Pass the user object
             } else {
                 debugLog("⚠️ No user logged in, cannot sync unlocks to Firebase.");
             }

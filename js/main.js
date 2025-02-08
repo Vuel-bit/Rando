@@ -137,12 +137,17 @@ function debugLog(message) {
                     const unlockedLevels = userDoc.data().unlockedLevels;
                     debugLog("📥 Loaded Unlocked Levels from Firebase: " + JSON.stringify(unlockedLevels));
     
+                    // ✅ Store user info in localStorage
                     localStorage.setItem("unlockedLevels", JSON.stringify(unlockedLevels));
+                    localStorage.setItem("user", JSON.stringify({ uid: user.uid, name: user.displayName }));
+    
                     loadUnlockedLevels();
                 } else {
                     debugLog("⚠️ No Firestore record for this user. Creating one.");
                     const defaultLevels = { medium: false, hard: false };
                     localStorage.setItem("unlockedLevels", JSON.stringify(defaultLevels));
+                    localStorage.setItem("user", JSON.stringify({ uid: user.uid, name: user.displayName }));
+    
                     await setDoc(userDocRef, { unlockedLevels: defaultLevels }, { merge: true });
                 }
             } catch (error) {
@@ -151,8 +156,10 @@ function debugLog(message) {
         } else {
             debugLog("❌ No user logged in");
             localStorage.removeItem("unlockedLevels");
+            localStorage.removeItem("user");
         }
     });
+    
     
     
     
