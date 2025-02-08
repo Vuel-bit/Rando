@@ -47,14 +47,11 @@ export class GameManager {
           
 
             this.playerChargeManager.resume();
-            this.aiManager.startAI();
+        
             this.aiChargeManager.resume();
+            this.aiManager.startAI();
 
-            this.aiManager.makeMove(); // put initial pieces on the board
-            this.aiManager.makeMove(); 
-            this.aiManager.makeMove(); 
-            this.aiManager.makeMove(); 
-            this.aiManager.makeMove(); 
+
 
             this.animationFrameId = requestAnimationFrame(() => this.loop());
                    
