@@ -1,4 +1,4 @@
-
+import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-firestore.js";
 import { PieceManager } from "./pieceManager.js";
 import { AIManager } from "./aiManager.js";
 import { ButtonManager } from "./buttonManager.js";
@@ -287,7 +287,10 @@ export class GameManager {
 
 
 function unlockNextLevel(user) {
-    if (!user) return; // Only save if logged in
+    if (!user) {
+        console.warn("⚠️ No user logged in. Cannot sync to Firebase.");
+        return;
+    }
 
     const selectedBoard = localStorage.getItem("selectedBoard");
     let unlockedLevels = JSON.parse(localStorage.getItem("unlockedLevels")) || { medium: false, hard: false };
@@ -302,11 +305,19 @@ function unlockNextLevel(user) {
 
     localStorage.setItem("unlockedLevels", JSON.stringify(unlockedLevels));
 
-    // ✅ Also store in Firebase
-    const db = getFirestore();
-    const userDocRef = doc(db, "users", user.uid);
-    setDoc(userDocRef, { unlockedLevels }, { merge: true });
+    try {
+        const db = window.firebaseDB;  // ✅ Use the global Firestore instance
+        if (!db) throw new Error("Firestore not initialized!");
+
+        const userDocRef = doc(db, "users", user.uid);
+        setDoc(userDocRef, { unlockedLevels }, { merge: true })
+            .then(() => console.log("✅ Successfully updated Firebase:", unlockedLevels))
+            .catch((error) => console.error("❌ Firebase update failed:", error));
+    } catch (error) {
+        console.error("❌ Error in unlockNextLevel:", error);
+    }
 }
+
 
 
 function generateHexGrid(ctx, width, height, hexagons, pieces, directions){
