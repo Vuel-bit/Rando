@@ -147,7 +147,7 @@ export class GameManager {
 
         this.isPaused = false;
 
-        
+    
         
 
         this.pieceManager.pieces.length = 0;// Clear all pieces
