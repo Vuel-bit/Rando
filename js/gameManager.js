@@ -1,9 +1,11 @@
-import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-firestore.js";
+import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-firestore.js";
 import { PieceManager } from "./pieceManager.js";
 import { AIManager } from "./aiManager.js";
 import { ButtonManager } from "./buttonManager.js";
 import { ChargeManager } from "./chargeManager.js";
 import { StarButton } from "./buttonManager.js";
+import { getAuth } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-auth.js";
+
 
 
 const r = 15; // Hex Grid radius 
@@ -136,6 +138,7 @@ export class GameManager {
 
     reset() {
 
+        
         document.getElementById('scoreBlue').textContent = '0';
         document.getElementById('scoreGreen').textContent = '0';
         this.playerChargeManager.reset();
@@ -210,7 +213,7 @@ export class GameManager {
     }
     
     
-    endGame(message) {
+    async endGame(message) {
         console.log("🏁 Game Over:", message);
     
         const endGameModal = document.getElementById("endGameModal");
@@ -223,18 +226,20 @@ export class GameManager {
             console.error("❌ End Game Modal elements missing!");
             return;
         }
-
-        if (message.includes("You Won")) {
-            const user = JSON.parse(localStorage.getItem("user")); // ✅ Retrieve logged-in user
     
-            if (user && user.uid) {
-                
-                unlockNextLevel(user); // ✅ Pass the user object
+        // ✅ Get current logged-in user from Firebase Auth
+        const auth = getAuth();
+        const user = auth.currentUser;
+    
+        if (message.includes("You Won")) {
+            if (user) {
+                console.log("🎉 Player Won! Unlocking next level for:", user.displayName);
+                await unlockNextLevel(user); // ✅ Firestore-based unlock
             } else {
-               
+                console.warn("⚠️ No user logged in, cannot sync unlocks to Firebase.");
             }
         }
-
+    
         // ✅ Show the end game popup
         endGameMessage.textContent = message;
         endGameModal.style.display = "flex";
@@ -244,99 +249,93 @@ export class GameManager {
     
         // ✅ Disable "Return to Game" since no game is running
         returnToGameButton.disabled = true;
-    
-        // ✅ Unlock the next level if the player won
-        if (message.includes("You Won")) {
-            const user = JSON.parse(localStorage.getItem("user")); // Retrieve logged-in user
-        
-            if (user) {
-                console.log("🎉 Player Won! Unlocking next level for:", user.displayName);
-                unlockNextLevel(user); // ✅ Pass the user parameter
-            } else {
-                console.warn("⚠️ No user logged in, cannot sync unlocks to Firebase.");
-            }
-        }
-    
-        // ✅ Remove old event listener before adding a new one
-        endGameButton.replaceWith(endGameButton.cloneNode(true));
-        let newEndGameButton = document.getElementById("endGameButton");
-    
-        // ✅ Reset the game and return to lobby
-        newEndGameButton.addEventListener("click", () => {
-            console.log("🔄 Resetting game & returning to lobby...");
-    
-            this.stop(); // Stops the game
-            this.isRunning = false;
-            this.isPaused = false;
-            this.reset(); // Resets the game board
-    
-            endGameModal.style.display = "none"; // Hide modal
-            document.getElementById("lobbyOverlay").style.display = "flex"; // Show lobby
-            this.loadUnlockedLevels(); // Update unlocked levels
-        });
     }
 
-    loadUnlockedLevels() {
-        let unlockedLevels = JSON.parse(localStorage.getItem("unlockedLevels"));
-    
-        // Ensure default values if storage is empty
-        if (!unlockedLevels) {
-            unlockedLevels = { medium: false, hard: false };
-            localStorage.setItem("unlockedLevels", JSON.stringify(unlockedLevels));
-        }
-    
-        console.log("🔓 Loaded Unlocked Levels:", unlockedLevels);
-    
-        const boardSelector = document.getElementById("boardSelector");
-        if (boardSelector) {
-            boardSelector.options[1].disabled = !unlockedLevels.medium;
-            boardSelector.options[2].disabled = !unlockedLevels.hard;
-        }
-    }
+
     
 }
+
+async function checkGameState(userId) {
+    const userRef = doc(db, "players", userId);
+    const userSnap = await getDoc(userRef);
+
+    if (userSnap.exists() && userSnap.data().gameOver) {
+        console.log("🔥 Previous game ended. Showing Game Over.");
+        document.getElementById("endGameModal").style.display = "block";
+    } else {
+        console.log("✅ No previous game state. Starting fresh.");
+        document.getElementById("endGameModal").style.display = "none";
+    }
+}
+
+
+
+async function getCurrentBoardFromFirestore(userId) {
+    try {
+        const db = getFirestore();
+        const userDocRef = doc(db, "users", userId);
+        const userDoc = await getDoc(userDocRef);
+
+        if (userDoc.exists() && userDoc.data().selectedBoard) {
+            console.log("📄 Loaded selected board from Firestore:", userDoc.data().selectedBoard);
+            return userDoc.data().selectedBoard;
+        } else {
+            console.log("⚠️ No board selection found in Firestore. Using default.");
+            return "board1"; // Default to Easy
+        }
+    } catch (error) {
+        console.error("❌ Error fetching selected board:", error);
+        return "board1"; // Default fallback
+    }
+}
+
 
 
 
 
 async function unlockNextLevel(user) {
     if (!user) {
-        
+        console.error("❌ No user provided for level unlocking.");
         return;
     }
-
-   
-
-    const selectedBoard = localStorage.getItem("selectedBoard");
-    let unlockedLevels = JSON.parse(localStorage.getItem("unlockedLevels")) || { medium: false, hard: false };
-
-    if (selectedBoard === "board1" && !unlockedLevels.medium) {
-        
-        unlockedLevels.medium = true;
-    } else if (selectedBoard === "board2" && !unlockedLevels.hard) {
-       
-        unlockedLevels.hard = true;
-    } else {
-       
-        return;
-    }
-
-    localStorage.setItem("unlockedLevels", JSON.stringify(unlockedLevels));
-   
 
     try {
-        const db = window.firebaseDB;
-        if (!db) throw new Error("Firestore not initialized!");
-
+        const db = getFirestore();
         const userDocRef = doc(db, "users", user.uid);
-       
-        await setDoc(userDocRef, { unlockedLevels }, { merge: true });
+        const userDoc = await getDoc(userDocRef);
 
-       
+        // ✅ Ensure `unlockedLevels` is always an object
+        let unlockedLevels = userDoc.exists() && userDoc.data().unlockedLevels
+            ? userDoc.data().unlockedLevels
+            : { medium: false, hard: false };
+
+        // ✅ Log to confirm unlockedLevels is valid
+        console.log("🔓 Current unlocked levels:", unlockedLevels);
+
+        const selectedBoard = await getCurrentBoardFromFirestore(user.uid);
+        let updated = false;
+
+        if (selectedBoard === "board1" && !unlockedLevels.medium) {
+            console.log("🎉 Unlocking Medium difficulty!");
+            unlockedLevels.medium = true;
+            updated = true;
+        } else if (selectedBoard === "board2" && !unlockedLevels.hard) {
+            console.log("🎉 Unlocking Hard difficulty!");
+            unlockedLevels.hard = true;
+            updated = true;
+        }
+
+        if (updated) {
+            await setDoc(userDocRef, { unlockedLevels }, { merge: true });
+            console.log("✅ Unlocked levels saved to Firestore:", unlockedLevels);
+        } else {
+            console.log("⚠️ No new levels unlocked.");
+        }
     } catch (error) {
-        
+        console.error("❌ Error unlocking next level:", error);
     }
 }
+
 
 
 
@@ -477,24 +476,6 @@ function checkNeighborProperties(hex, directions, hexagons) {
     return false;
 }
 
-function saveProgress(score) {
-    const user = JSON.parse(localStorage.getItem("user"));
-    if (user) {
-        localStorage.setItem(`progress_${user.uid}`, JSON.stringify({ score }));
-        console.log("Progress saved for", user.name);
-    }
-}
 
-function loadProgress() {
-    const user = JSON.parse(localStorage.getItem("user"));
-    if (user) {
-        const progress = JSON.parse(localStorage.getItem(`progress_${user.uid}`));
-        if (progress) {
-            console.log(`Welcome back, ${user.name}! Your last score was: ${progress.score}`);
-            return progress.score;
-        }
-    }
-    return 0;
-}
 
 

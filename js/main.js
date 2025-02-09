@@ -6,6 +6,7 @@ import { ChargeManager } from "./chargeManager.js";
 import { ButtonManager } from "./buttonManager.js";
 import { PieceManager } from "./pieceManager.js";
 import { StarButton } from "./buttonManager.js";
+
 console.log("🚀 Checking Firebase Auth:", window.firebaseAuth);
 console.log("🚀 Checking Firebase Provider:", window.firebaseProvider);
 
@@ -38,16 +39,49 @@ window.firebaseDB = db;  // Store Firestore globally
 
 console.log("🔥 Firebase Initialized:", app);
 
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
+    console.log("🚀 DOM loaded, setting up game...");
+
     setupLobby();
     setupRulesModal();
     setupEndGameModal();
+
+    onAuthStateChanged(auth, async (user) => {
+        if (user) {
+            console.log("✅ User logged in:", user.email);
+            const userId = getCurrentUserId(); // ✅ Use new function
+            if (userId) await checkGameState(userId); // ✅ Fix missing function
+
+            try {
+                const db = getFirestore();
+                const userDocRef = doc(db, "users", userId);
+                const userDoc = await getDoc(userDocRef);
+
+                let unlockedLevels = { medium: false, hard: false };
+
+                if (userDoc.exists()) {
+                    unlockedLevels = userDoc.data().unlockedLevels || unlockedLevels;
+                    console.log("🔓 Loaded Unlocked Levels from Firestore:", unlockedLevels);
+                } else {
+                    console.log("🚀 First-time user detected. Creating profile...");
+                    await setDoc(userDocRef, { unlockedLevels }, { merge: true });
+                }
+
+                await setupLobby();
+            } catch (error) {
+                console.error("❌ Error in AuthStateChanged:", error);
+            }
+        } else {
+            console.log("❌ No user logged in.");
+        }
+    });
 });
 
 
 
 
-    function initializeGame() {
+
+async function initializeGame() {
         console.log("Game initialized.");
     
         if (!window.firebaseAuth) {
@@ -62,10 +96,33 @@ document.addEventListener("DOMContentLoaded", () => {
             gameManager = null; // Clear reference to prevent stacking
         }
     
-        // ✅ Get the correct AI interval for the selected difficulty
-        const selectedBoard = localStorage.getItem("selectedBoard") || "board1";
-        let aiInterval = 4500; // Default to Easy
+  
+        const auth = getAuth();
+        const user = auth.currentUser;
     
+        let selectedBoard = "board1"; // Default to Easy
+        let aiInterval = 4500; // Default AI difficulty
+    
+        if (user) {
+            try {
+                const db = getFirestore();
+                const userDocRef = doc(db, "users", user.uid);
+                const userDoc = await getDoc(userDocRef);
+    
+                if (userDoc.exists() && userDoc.data().selectedBoard) {
+                    selectedBoard = userDoc.data().selectedBoard;
+                    console.log("📄 Loaded selected board from Firestore:", selectedBoard);
+                } else {
+                    console.log("⚠️ No board selection found in Firestore. Using default.");
+                }
+            } catch (error) {
+                console.error("❌ Error fetching selected board:", error);
+            }
+        } else {
+            console.warn("⚠️ No user logged in. Using default board.");
+        }
+    
+        // ✅ Set AI interval based on selected board
         if (selectedBoard === "board2") {
             aiInterval = 4000; // Medium
         } else if (selectedBoard === "board3") {
@@ -74,7 +131,7 @@ document.addEventListener("DOMContentLoaded", () => {
     
         console.log(`🎮 Starting game on difficulty: ${selectedBoard}, AI interval: ${aiInterval}ms`);
     
-        // ✅ Pass the correct interval to GameManager
+        // ✅ Initialize the game with the correct difficulty
         gameManager = new GameManager(aiInterval);
         gameManager.start();
     
@@ -113,43 +170,19 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
 
-    onAuthStateChanged(auth, async (user) => {
-        if (user) {
-           
+    async function checkGameState(userId) {
+        const db = getFirestore();
+        const userRef = doc(db, "users", userId);
+        const userSnap = await getDoc(userRef);
     
-            try {
-                const db = window.firebaseDB;
-                if (!db) throw new Error("Firestore not initialized!");
-    
-                const userDocRef = doc(db, "users", user.uid);
-                const userDoc = await getDoc(userDocRef);
-    
-                if (userDoc.exists()) {
-                    const unlockedLevels = userDoc.data().unlockedLevels;
-                    
-    
-                    // ✅ Store user info in localStorage
-                    localStorage.setItem("unlockedLevels", JSON.stringify(unlockedLevels));
-                    localStorage.setItem("user", JSON.stringify({ uid: user.uid, name: user.displayName }));
-    
-                    loadUnlockedLevels();
-                } else {
-                   
-                    const defaultLevels = { medium: false, hard: false };
-                    localStorage.setItem("unlockedLevels", JSON.stringify(defaultLevels));
-                    localStorage.setItem("user", JSON.stringify({ uid: user.uid, name: user.displayName }));
-    
-                    await setDoc(userDocRef, { unlockedLevels: defaultLevels }, { merge: true });
-                }
-            } catch (error) {
-               
-            }
+        if (userSnap.exists() && userSnap.data().gameOver) {
+            console.log("🔥 Previous game ended. Showing Game Over.");
+            document.getElementById("endGameModal").style.display = "block";
         } else {
-            
-            localStorage.removeItem("unlockedLevels");
-            localStorage.removeItem("user");
+            console.log("✅ No previous game state. Starting fresh.");
+            document.getElementById("endGameModal").style.display = "none";
         }
-    });
+    }
     
     
     
@@ -198,14 +231,8 @@ function updateLobbyUI(user) {
 }
 
 
-// ✅ Save user data locally
-function saveUserData(user) {
-    localStorage.setItem("user", JSON.stringify({ uid: user.uid, name: user.displayName }));
-    document.getElementById("googleLogin").style.display = "none";
-    document.getElementById("logoutButton").style.display = "block";
-}
 
-function setupLobby() {
+async function setupLobby() {
     console.log("🔹 Setting up lobby...");
 
     const lobbyOverlay = document.getElementById("lobbyOverlay");
@@ -227,7 +254,56 @@ function setupLobby() {
     const auth = getAuth();
     const provider = new GoogleAuthProvider();
 
-    loadUnlockedLevels();
+    const userId = getCurrentUserId(); // Ensure this function gets the correct Firebase user
+    
+
+    if (!userId) {
+        console.warn("⚠️ No user logged in. Lobby setup skipped.");
+        return;
+    }
+
+    const levels = await loadUnlockedLevels(userId);
+
+    if (!Array.isArray(levels)) {
+        console.error("❌ Error: Unlocked levels is not an array!", levels);
+        return;
+    }
+
+        // ✅ Ensure the board selector reflects the player's progress
+        document.getElementById("boardSelector").innerHTML = `
+        <option value="board1">Easy</option>
+        <option value="board2" ${levels.includes("medium") ? "" : "disabled"}>Medium</option>
+        <option value="board3" ${levels.includes("hard") ? "" : "disabled"}>Hard</option>
+    `;
+
+    // ✅ Add event listener for end game button (ensuring it's only attached once)
+    let endGameButton = document.getElementById("endGameButton");
+    if (endGameButton) {
+        endGameButton.replaceWith(endGameButton.cloneNode(true));
+        endGameButton = document.getElementById("endGameButton");
+
+        endGameButton.addEventListener("click", async () => {
+            console.log("🔄 Resetting game & returning to lobby...");
+
+            gameManager.stop();
+            gameManager.isRunning = false;
+            gameManager.isPaused = false;
+            gameManager.reset();
+
+            document.getElementById("endGameModal").style.display = "none"; // Hide modal
+            document.getElementById("lobbyOverlay").style.display = "flex"; // Show lobby
+
+            // ✅ Fetch fresh unlocked levels from Firestore
+            const levels = await loadUnlockedLevels(userId);
+
+            // ✅ Update the board selector again to reflect changes
+            document.getElementById("boardSelector").innerHTML = `
+                <option value="board1">Easy</option>
+                <option value="board2" ${levels.includes("medium") ? "" : "disabled"}>Medium</option>
+                <option value="board3" ${levels.includes("hard") ? "" : "disabled"}>Hard</option>
+            `;
+        });
+    }
 
     // ✅ Handle login
     loginButton.addEventListener("click", () => {
@@ -241,28 +317,26 @@ function setupLobby() {
             .catch((error) => console.error("❌ Login failed:", error));
     });
 
-        logoutButton.addEventListener("click", async () => {  // 🔹 Add `async` here
+    logoutButton.addEventListener("click", async () => {
         console.log("🔹 Logout button clicked!");
     
         try {
-            await signOut(auth);  // ✅ Now `await` works correctly
+            await signOut(auth);  // ✅ Logs out the user from Firebase
             console.log("✅ User successfully logged out.");
-    
-            // ✅ Clear localStorage to remove unlock progress from the previous user
-            localStorage.removeItem("unlockedLevels");
-            localStorage.removeItem("user");
     
             // ✅ Refresh the page to ensure a clean state for the next user
             window.location.reload();
         } catch (error) {
             console.error("❌ Logout failed:", error);
         }
+    
         signOut(auth).then(() => {
             playerInfo.textContent = "";
             loginButton.style.display = "block";
             logoutButton.style.display = "none";
         }).catch((error) => console.error("❌ Logout failed:", error));
     });
+    
 
        // ✅ Pause button now pauses the game and opens the lobby
        pauseButton.addEventListener("click", () => {
@@ -283,46 +357,82 @@ function setupLobby() {
     });
 
     // ✅ Start game button initializes game before hiding lobby
-    startGameButton.addEventListener("click", () => {
+    startGameButton.addEventListener("click", async () => {
         console.log("🔹 Start Game button clicked!");
-        
-
+    
         const selectedBoard = boardSelector.value;
-        localStorage.setItem("selectedBoard", selectedBoard);
+    
+        // ✅ Get the logged-in user from Firebase Auth
+        const auth = getAuth();
+        const user = auth.currentUser;
+    
+        if (user) {
+            try {
+                const db = getFirestore();
+                const userDocRef = doc(db, "users", user.uid);
+    
+                // ✅ Save the selected board in Firestore
+                await setDoc(userDocRef, { selectedBoard }, { merge: true });
+    
+                console.log("✅ Selected board saved in Firestore:", selectedBoard);
+            } catch (error) {
+                console.error("❌ Error saving selected board:", error);
+            }
+        } else {
+            console.warn("⚠️ No user logged in, board selection will not be saved.");
+        }
+    
         initializeGame();
         console.log("✅ Hiding lobby...");
         lobbyOverlay.style.display = "none"; // Hide lobby
     });
-
-
 }
 
-    /** ✅ Load unlocked levels from local storage */
-    function loadUnlockedLevels() {
-        const unlockedLevels = JSON.parse(localStorage.getItem("unlockedLevels")) || { medium: false, hard: false };
-        console.log("🔓 Loaded Unlocked Levels:", unlockedLevels);
-
-        const boardSelector = document.getElementById("boardSelector");
-        if (unlockedLevels.medium) {
-            boardSelector.options[1].disabled = false; // Unlock Medium
-        }
-        if (unlockedLevels.hard) {
-            boardSelector.options[2].disabled = false; // Unlock Hard
-        }
-    }
-
-
-
-
-function startGame() {
-    if (!gameManager) {
-        console.error("❌ gameManager is undefined! Cannot start the game.");
-        return;
-    }
-
-    console.log("🎮 Starting game...");
-    gameManager.start();
+function getCurrentUserId() {
+    const auth = getAuth();
+    const user = auth.currentUser;
+    return user ? user.uid : null;
 }
+
+
+async function loadUnlockedLevels(userId) {
+    console.log("🔄 Fetching unlocked levels from Firestore...");
+
+    const auth = getAuth();
+    const user = auth.currentUser;
+
+    if (!user) {
+        console.warn("⚠️ No user logged in. Defaulting to Easy mode.");
+        return ["easy"]; // ✅ Ensure a default array is returned
+    }
+
+    try {
+        const db = getFirestore();
+        const userDocRef = doc(db, "users", user.uid);
+        const userDoc = await getDoc(userDocRef);
+
+        let unlockedLevels = { medium: false, hard: false }; // Default values
+
+        if (userDoc.exists() && userDoc.data().unlockedLevels) {
+            unlockedLevels = userDoc.data().unlockedLevels;
+        }
+
+        console.log("🔓 Loaded Unlocked Levels from Firestore:", unlockedLevels);
+
+        // ✅ Convert unlockedLevels object into an array format for `.includes()`
+        const levelsArray = ["easy"];
+        if (unlockedLevels.medium) levelsArray.push("medium");
+        if (unlockedLevels.hard) levelsArray.push("hard");
+
+        return levelsArray;
+    } catch (error) {
+        console.error("❌ Error loading unlocked levels from Firestore:", error);
+        return ["easy"]; // ✅ Default to an array to prevent crashes
+    }
+}
+
+
+
 
 function setupRulesModal() {
     const modal = document.getElementById("rulesModal");
