@@ -5,6 +5,8 @@ import { ButtonManager } from "./buttonManager.js";
 import { ChargeManager } from "./chargeManager.js";
 import { StarButton } from "./buttonManager.js";
 import { getAuth } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-auth.js";
+import { endGame } from "./main.js";
+
 
 
 
@@ -14,12 +16,25 @@ const a = 2 * Math.PI / 6; // constant for drawing hexes
 
 
 export class GameManager {
-    constructor(aiInterval = 4500) { // ✅ Default to 4500 (Easy)
-        this.pieceManager = new PieceManager(this);
-        this.playerChargeManager = new ChargeManager(10, 4000);
-        this.aiChargeManager = new ChargeManager(10, aiInterval);
-        this.aiManager = new AIManager(this, aiInterval); // ✅ Pass AI interval
 
+    static instance = null;
+
+    constructor(currentLevel = 1) {
+
+        if (GameManager.instance) {
+            console.warn("⚠️ GameManager already exists! Returning existing instance.");
+            return GameManager.instance; // ✅ Return existing instance if already created
+        }        
+
+        console.log("🎮 Creating new GameManager instance...");
+
+        this.currentLevel = currentLevel; // ✅ Track current level
+        this.pieceManager = new PieceManager(this);
+        this.playerChargeManager = new ChargeManager(this, 10, 4000);
+        this.aiChargeManager = new ChargeManager(this, 10, this.getAIInterval()); 
+        this.aiManager = new AIManager(this, this.getAIInterval()); // ✅ Use dynamic AI interval
+    
+    
         
 
         this.starButton = new StarButton("launchStarButton", this);
@@ -35,7 +50,51 @@ export class GameManager {
             { dx: -(r + r * Math.cos(a)), dy:  r * Math.sin(a)  },  // Bottom-left
             { dx: -(r + r * Math.cos(a)), dy: - r * Math.sin(a) },  // Top - Left
         ];
+
+        GameManager.instance = this;
     }
+
+    static getInstance(currentLevel = 1) {
+        if (!GameManager.instance) {
+            GameManager.instance = new GameManager(currentLevel);
+        }
+        return GameManager.instance;
+    }
+
+    getAIInterval() {
+        if (this.currentLevel >= 11) return 3500;
+        if (this.currentLevel >= 6) return 4000;
+        return 4500;
+    }
+
+    async advanceToNextLevel() {
+        if (this.currentLevel < 15) {
+            this.currentLevel++;
+            console.log(`🔓 Unlocking Level ${this.currentLevel}...`);
+    
+            const auth = getAuth();
+            const user = auth.currentUser;
+    
+            if (user) {
+                try {
+                    const db = getFirestore();
+                    const userDocRef = doc(db, "users", user.uid);
+                    await setDoc(userDocRef, { currentLevel: this.currentLevel }, { merge: true });
+    
+                    console.log("✅ Level progression saved in Firestore:", this.currentLevel);
+                } catch (error) {
+                    console.error("❌ Error saving new level in Firestore:", error);
+                }
+            } else {
+                console.warn("⚠️ No user logged in, cannot sync unlocks to Firebase.");
+            }
+        }
+    }
+    
+    
+
+    
+    
 
     start() {  
 
@@ -46,14 +105,15 @@ export class GameManager {
     
             this.reset();
             this.isRunning = true;
-          
+            this.aiManager.setAIForLevel(this.currentLevel);
+            console.log(this.aiManager, this.currentLevel);
 
             this.playerChargeManager.resume();
         
             this.aiChargeManager.resume();
             this.aiManager.startAI();
 
-
+      
 
             this.animationFrameId = requestAnimationFrame(() => this.loop());
                    
@@ -61,16 +121,27 @@ export class GameManager {
 
     togglePause() {
         this.isPaused = !this.isPaused;
+        console.log(this.isPaused ? "⏸️ Game Paused" : "▶️ Game Resumed");
+
         if (this.isPaused) {
             this.playerChargeManager.pause();
             this.aiChargeManager.pause();
             this.aiManager.stopAI();
+            cancelAnimationFrame(this.animationFrameId);
+            document.getElementById("lobbyOverlay").style.display = "flex";
         } else {
+            if (!this.isRunning) {
+                console.warn("⚠️ Game is not running. Ignoring unpause.");
+                return;
+            }
             this.playerChargeManager.resume();
             this.aiChargeManager.resume();
             this.aiManager.startAI();
+            this.animationFrameId = requestAnimationFrame(() => this.loop());
+            document.getElementById("lobbyOverlay").style.display = "none";
         }
     }
+
 
     loop() {
         if (!this.isRunning) return;
@@ -90,6 +161,13 @@ export class GameManager {
         }
     
         this.animationFrameId = requestAnimationFrame(() => this.loop());
+    }
+    
+    updateGameInfo() {
+        let chapter = Math.ceil(this.currentLevel / 5);
+        let levelInChapter = ((this.currentLevel - 1) % 5) + 1;
+        document.getElementById("currentChapter").innerText = convertToRoman(chapter);
+        document.getElementById("currentLevel").innerText = levelInChapter;
     }
     
 
@@ -163,6 +241,7 @@ export class GameManager {
         this.pieceManager.blueBoostCounter = 0;
         this.pieceManager.greenBoostCounter = 0;
         this.starButton.updateText(this.pieceManager.greenBoostCounter);
+        this.updateGameInfo(); 
 
     }
 
@@ -206,138 +285,19 @@ export class GameManager {
         let scoreGreen = parseInt(document.getElementById('scoreGreen').textContent) || 0;
     
         if (scoreGreen >= winningScore) { 
-            this.endGame("🎉 You Won! 🏆");  // ✅ Green is the player, so this means the player won
+            endGame("🎉 You Won! 🏆");  // ✅ Call `endGame()` from `main.js`
         } else if (scoreBlue >= winningScore) {
-            this.endGame("😞 You Lost. Try Again!"); // ✅ Blue is the AI, so this means the AI won
+            endGame("😞 You Lost. Try Again!");
         }
-    }
-    
-    
-    async endGame(message) {
-        console.log("🏁 Game Over:", message);
-    
-        const endGameModal = document.getElementById("endGameModal");
-        const endGameMessage = document.getElementById("endGameMessage");
-        const endGameButton = document.getElementById("endGameButton");
-        const returnToGameButton = document.getElementById("returnToGameButton");
-        const boardSelector = document.getElementById("boardSelector");
-    
-        if (!endGameModal || !endGameMessage || !endGameButton || !returnToGameButton || !boardSelector) {
-            console.error("❌ End Game Modal elements missing!");
-            return;
-        }
-    
-        // ✅ Get current logged-in user from Firebase Auth
-        const auth = getAuth();
-        const user = auth.currentUser;
-    
-        if (message.includes("You Won")) {
-            if (user) {
-                console.log("🎉 Player Won! Unlocking next level for:", user.displayName);
-                await unlockNextLevel(user); // ✅ Firestore-based unlock
-            } else {
-                console.warn("⚠️ No user logged in, cannot sync unlocks to Firebase.");
-            }
-        }
-    
-        // ✅ Show the end game popup
-        endGameMessage.textContent = message;
-        endGameModal.style.display = "flex";
-    
-        // ✅ Pause the game
-        this.togglePause();
-    
-        // ✅ Disable "Return to Game" since no game is running
-        returnToGameButton.disabled = true;
-    }
-
-
-    
-}
-
-async function checkGameState(userId) {
-    const userRef = doc(db, "players", userId);
-    const userSnap = await getDoc(userRef);
-
-    if (userSnap.exists() && userSnap.data().gameOver) {
-        console.log("🔥 Previous game ended. Showing Game Over.");
-        document.getElementById("endGameModal").style.display = "block";
-    } else {
-        console.log("✅ No previous game state. Starting fresh.");
-        document.getElementById("endGameModal").style.display = "none";
-    }
-}
-
-
-
-async function getCurrentBoardFromFirestore(userId) {
-    try {
-        const db = getFirestore();
-        const userDocRef = doc(db, "users", userId);
-        const userDoc = await getDoc(userDocRef);
-
-        if (userDoc.exists() && userDoc.data().selectedBoard) {
-            console.log("📄 Loaded selected board from Firestore:", userDoc.data().selectedBoard);
-            return userDoc.data().selectedBoard;
-        } else {
-            console.log("⚠️ No board selection found in Firestore. Using default.");
-            return "board1"; // Default to Easy
-        }
-    } catch (error) {
-        console.error("❌ Error fetching selected board:", error);
-        return "board1"; // Default fallback
-    }
+    }    
 }
 
 
 
 
-
-async function unlockNextLevel(user) {
-    if (!user) {
-        console.error("❌ No user provided for level unlocking.");
-        return;
-    }
-
-    try {
-        const db = getFirestore();
-        const userDocRef = doc(db, "users", user.uid);
-        const userDoc = await getDoc(userDocRef);
-
-        // ✅ Ensure `unlockedLevels` is always an object
-        let unlockedLevels = userDoc.exists() && userDoc.data().unlockedLevels
-            ? userDoc.data().unlockedLevels
-            : { medium: false, hard: false };
-
-        // ✅ Log to confirm unlockedLevels is valid
-        console.log("🔓 Current unlocked levels:", unlockedLevels);
-
-        const selectedBoard = await getCurrentBoardFromFirestore(user.uid);
-        let updated = false;
-
-        if (selectedBoard === "board1" && !unlockedLevels.medium) {
-            console.log("🎉 Unlocking Medium difficulty!");
-            unlockedLevels.medium = true;
-            updated = true;
-        } else if (selectedBoard === "board2" && !unlockedLevels.hard) {
-            console.log("🎉 Unlocking Hard difficulty!");
-            unlockedLevels.hard = true;
-            updated = true;
-        }
-
-        if (updated) {
-            await setDoc(userDocRef, { unlockedLevels }, { merge: true });
-            console.log("✅ Unlocked levels saved to Firestore:", unlockedLevels);
-        } else {
-            console.log("⚠️ No new levels unlocked.");
-        }
-    } catch (error) {
-        console.error("❌ Error unlocking next level:", error);
-    }
+function convertToRoman(num) {
+    return ["I", "II", "III"][num - 1] || "I";
 }
-
-
-
 
 
 

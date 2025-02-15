@@ -12,17 +12,51 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 20px;
+            gap: 5px;
             width: 90%;
-            max-width: 800px; /* Prevent it from being too wide */
+            max-width: 400px;
         }
 
         #header {
             display: flex;
-            justify-content: center; /* Center the buttons and scoreboard horizontally */
             align-items: center;
-            gap: 20px;
+            justify-content: space-between;
             width: 100%;
+            padding: 2px;
+            background-color: #f4f4f4;
+            border-bottom: 2px solid #ccc;
+        }
+
+        #aiStats {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .aiCounter {
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            font-weight: bold;
+            background-color: blue;
+            color: white;
+            border-radius: 50%;
+        }
+
+        #aiPortrait {
+            width: 100px;
+            height: 100px;
+            background-color: gray;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            color: white;
+            border: 2px solid black;
         }
 
         #scoreBoard {
@@ -33,7 +67,6 @@
             background-color: #f4f4f4;
             border: 1px solid #ccc;
             border-radius: 5px;
-            min-width: 120px;
             text-align: center;
             display: flex;
             flex-direction: column;
@@ -48,7 +81,30 @@
         .score.blue { color: blue; }
         .score.green { color: green; }
 
-        #startButton, #pauseButton {
+        #gameInfo {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            font-size: 16px;
+            font-weight: bold;
+        }
+
+        #pauseButton {
+            margin-top: 5px;
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        #pauseButton:hover {
+            background-color: #45a049;
+        }
+
+
+        #startButton {
             padding: 10px 20px;
             background-color: #4CAF50;
             color: white;
@@ -58,7 +114,7 @@
             cursor: pointer;
         }
 
-        #startButton:hover, #pauseButton:hover {
+        #startButton:hover {
             background-color: #45a049;
         }
 
@@ -71,7 +127,7 @@
         }
 
         canvas {
-            border: 1px solid #000;
+           
             width: 100%;
             max-width: 400px;
             height: auto;
@@ -333,4 +389,53 @@
     #logoutButton:hover {
         background-color: #c82333; /* Darker red on hover */
     }
+
+    #levelGrid {
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        gap: 10px;
+        justify-content: center;
+        padding: 20px;
+    }
+    
+    #levelGrid button {
+        background-color: #4CAF50;
+        color: white;
+        border: none;
+        padding: 10px;
+        font-size: 16px;
+        cursor: pointer;
+        border-radius: 5px;
+        transition: all 0.3s ease-in-out;
+    }
+    
+    #levelGrid button:disabled {
+        background-color: #ccc;
+        color: #666;
+        cursor: not-allowed;
+    }
+
+    #gameInfo {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 10px;
+        font-size: 14px;
+        font-weight: bold;
+        color: #333;
+        margin-top: 10px;
+        flex-direction: column;
+    }
+
+    #lobbyLevels {
+        text-align: center;
+        margin-top: 20px;
+    }
+    
+    #lobbyLevels h3 {
+        font-size: 20px;
+        color: #333;
+        margin-bottom: 10px;
+    }
+    
     

@@ -2,16 +2,9 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/11.2.0/firebas
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-auth.js";
 import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-firestore.js";
 import { GameManager } from "./gameManager.js";
-import { ChargeManager } from "./chargeManager.js";
-import { ButtonManager } from "./buttonManager.js";
-import { PieceManager } from "./pieceManager.js";
-import { StarButton } from "./buttonManager.js";
-
-console.log("🚀 Checking Firebase Auth:", window.firebaseAuth);
-console.log("🚀 Checking Firebase Provider:", window.firebaseProvider);
 
 let gameManager;
-
+let currentLevel = 1;
 
 // ✅ Firebase Configuration
 const firebaseConfig = {
@@ -37,356 +30,49 @@ window.firebaseAuth = auth;
 window.firebaseProvider = provider;
 window.firebaseDB = db;  // Store Firestore globally
 
-console.log("🔥 Firebase Initialized:", app);
 
 document.addEventListener("DOMContentLoaded", async () => {
-    console.log("🚀 DOM loaded, setting up game...");
 
-    setupLobby();
     setupRulesModal();
     setupEndGameModal();
 
+    // 🚀 Defer setting up lobby until Firebase checks auth state
     onAuthStateChanged(auth, async (user) => {
+        console.log("🚀 Auth state changed:", user ? user.email : "No user");
+
         if (user) {
             console.log("✅ User logged in:", user.email);
-            const userId = getCurrentUserId(); // ✅ Use new function
-            if (userId) await checkGameState(userId); // ✅ Fix missing function
+            const userId = getCurrentUserId();
 
             try {
                 const db = getFirestore();
                 const userDocRef = doc(db, "users", userId);
                 const userDoc = await getDoc(userDocRef);
 
-                let unlockedLevels = { medium: false, hard: false };
-
-                if (userDoc.exists()) {
-                    unlockedLevels = userDoc.data().unlockedLevels || unlockedLevels;
-                    console.log("🔓 Loaded Unlocked Levels from Firestore:", unlockedLevels);
+                if (userDoc.exists() && userDoc.data().currentLevel) {
+                    currentLevel = userDoc.data().currentLevel;
+                    console.log("🔓 Loaded Current Level from Firestore:", currentLevel);
                 } else {
                     console.log("🚀 First-time user detected. Creating profile...");
-                    await setDoc(userDocRef, { unlockedLevels }, { merge: true });
+                    await setDoc(userDocRef, { currentLevel }, { merge: true });
                 }
 
-                await setupLobby();
             } catch (error) {
                 console.error("❌ Error in AuthStateChanged:", error);
             }
+
+            setupLobby();  
+            let chapter = Math.ceil(currentLevel / 5);  // 1-3
+            let level = ((currentLevel - 1) % 5) + 1; 
+       
         } else {
             console.log("❌ No user logged in.");
+            setupLobby();
+            updateStartButtonText(1,1); // takes chapter and level
         }
     });
 });
 
-
-
-
-
-async function initializeGame() {
-        console.log("Game initialized.");
-    
-        if (!window.firebaseAuth) {
-            console.error("❌ Firebase Auth is still undefined!");
-            return;
-        }
-    
-        // ✅ If a game is already running, stop it before starting a new one
-        if (gameManager && gameManager.isRunning) {
-            console.log("🛑 Stopping existing game before starting a new one...");
-            gameManager.stop();
-            gameManager = null; // Clear reference to prevent stacking
-        }
-    
-  
-        const auth = getAuth();
-        const user = auth.currentUser;
-    
-        let selectedBoard = "board1"; // Default to Easy
-        let aiInterval = 4500; // Default AI difficulty
-    
-        if (user) {
-            try {
-                const db = getFirestore();
-                const userDocRef = doc(db, "users", user.uid);
-                const userDoc = await getDoc(userDocRef);
-    
-                if (userDoc.exists() && userDoc.data().selectedBoard) {
-                    selectedBoard = userDoc.data().selectedBoard;
-                    console.log("📄 Loaded selected board from Firestore:", selectedBoard);
-                } else {
-                    console.log("⚠️ No board selection found in Firestore. Using default.");
-                }
-            } catch (error) {
-                console.error("❌ Error fetching selected board:", error);
-            }
-        } else {
-            console.warn("⚠️ No user logged in. Using default board.");
-        }
-    
-        // ✅ Set AI interval based on selected board
-        if (selectedBoard === "board2") {
-            aiInterval = 4000; // Medium
-        } else if (selectedBoard === "board3") {
-            aiInterval = 3500; // Hard
-        }
-    
-        console.log(`🎮 Starting game on difficulty: ${selectedBoard}, AI interval: ${aiInterval}ms`);
-    
-        // ✅ Initialize the game with the correct difficulty
-        gameManager = new GameManager(aiInterval);
-        gameManager.start();
-    
-        // ✅ Enable "Return to Game" button when a new game starts
-        const returnToGameButton = document.getElementById("returnToGameButton");
-        if (returnToGameButton) {
-            returnToGameButton.disabled = false;
-        } else {
-            console.error("❌ returnToGameButton not found in DOM!");
-        }
-    
-        // ✅ Remove Old Button Event Listeners Before Re-Adding
-        removeButtonEventListeners();
-    
-        // ✅ Re-Add Button Event Listeners Only Once
-        gameManager.playerChargeManager.addButton("launchCircleButton", "circle", () => {
-            gameManager.pieceManager.createPiece("circle");
-        });
-    
-        gameManager.playerChargeManager.addButton("launchTriangleButton", "triangle", () => {
-            gameManager.pieceManager.createPiece("triangle");
-        });
-    
-        gameManager.playerChargeManager.addButton("launchRectangleButton", "rectangle", () => {
-            gameManager.pieceManager.createPiece("rectangle");
-        });
-    
-        gameManager.playerChargeManager.addButton("launchSquareButton", "square", () => {
-            gameManager.pieceManager.createPiece("square");
-        });
-    
-        // ✅ Update Button Displays
-        gameManager.playerChargeManager.updateButtonDisplays();
-    }
-    
-
-
-
-    async function checkGameState(userId) {
-        const db = getFirestore();
-        const userRef = doc(db, "users", userId);
-        const userSnap = await getDoc(userRef);
-    
-        if (userSnap.exists() && userSnap.data().gameOver) {
-            console.log("🔥 Previous game ended. Showing Game Over.");
-            document.getElementById("endGameModal").style.display = "block";
-        } else {
-            console.log("✅ No previous game state. Starting fresh.");
-            document.getElementById("endGameModal").style.display = "none";
-        }
-    }
-    
-    
-    
-    
-    
-    
-
-
-
-        /** ✅ Helper Function to Remove Old Event Listeners */
-        function removeButtonEventListeners() {
-            console.log("🔹 Removing old button event listeners...");
-            const buttons = ["launchCircleButton", "launchTriangleButton", "launchRectangleButton", "launchSquareButton"];
-
-            buttons.forEach(buttonId => {
-                const button = document.getElementById(buttonId);
-                if (button) {
-                    const newButton = button.cloneNode(true); // Clone button to remove all listeners
-                    button.parentNode.replaceChild(newButton, button); // Replace with clean version
-                }
-            });
-        }
-
-
-
-/** ✅ NEW FUNCTION: Updates the Lobby Login UI **/
-function updateLobbyUI(user) {
-    const loginButton = document.getElementById("loginButton");
-    const logoutButton = document.getElementById("logoutButton");
-    const playerInfo = document.getElementById("playerInfo");
-
-    if (!loginButton || !logoutButton || !playerInfo) {
-        console.error("❌ Login/Logout elements are missing from the DOM.");
-        return;
-    }
-
-    if (user) {
-        playerInfo.textContent = `Welcome, ${user.displayName}`;
-        loginButton.style.display = "none";
-        logoutButton.style.display = "block";
-    } else {
-        playerInfo.textContent = "";
-        loginButton.style.display = "block";
-        logoutButton.style.display = "none";
-    }
-}
-
-
-
-async function setupLobby() {
-    console.log("🔹 Setting up lobby...");
-
-    const lobbyOverlay = document.getElementById("lobbyOverlay");
-    const startGameButton = document.getElementById("startGameButton");
-    const pauseButton = document.getElementById("pauseButton");
-    const returnToGameButton = document.getElementById("returnToGameButton");
-    const loginButton = document.getElementById("loginButton");
-    const logoutButton = document.getElementById("logoutButton");
-    const playerInfo = document.getElementById("playerInfo");
-    const boardSelector = document.getElementById("boardSelector");
-
-    if (!lobbyOverlay || !startGameButton || !pauseButton || !returnToGameButton || !loginButton || !logoutButton || !playerInfo || !boardSelector) {
-        console.error("❌ Some elements are missing from the DOM! Check index.html.");
-        return;
-    }
-
-
-    // ✅ Check if user is already logged in
-    const auth = getAuth();
-    const provider = new GoogleAuthProvider();
-
-    const userId = getCurrentUserId(); // Ensure this function gets the correct Firebase user
-    
-
-    if (!userId) {
-        console.warn("⚠️ No user logged in. Lobby setup skipped.");
-        return;
-    }
-
-    const levels = await loadUnlockedLevels(userId);
-
-    if (!Array.isArray(levels)) {
-        console.error("❌ Error: Unlocked levels is not an array!", levels);
-        return;
-    }
-
-        // ✅ Ensure the board selector reflects the player's progress
-        document.getElementById("boardSelector").innerHTML = `
-        <option value="board1">Easy</option>
-        <option value="board2" ${levels.includes("medium") ? "" : "disabled"}>Medium</option>
-        <option value="board3" ${levels.includes("hard") ? "" : "disabled"}>Hard</option>
-    `;
-
-    // ✅ Add event listener for end game button (ensuring it's only attached once)
-    let endGameButton = document.getElementById("endGameButton");
-    if (endGameButton) {
-        endGameButton.replaceWith(endGameButton.cloneNode(true));
-        endGameButton = document.getElementById("endGameButton");
-
-        endGameButton.addEventListener("click", async () => {
-            console.log("🔄 Resetting game & returning to lobby...");
-
-            gameManager.stop();
-            gameManager.isRunning = false;
-            gameManager.isPaused = false;
-            gameManager.reset();
-
-            document.getElementById("endGameModal").style.display = "none"; // Hide modal
-            document.getElementById("lobbyOverlay").style.display = "flex"; // Show lobby
-
-            // ✅ Fetch fresh unlocked levels from Firestore
-            const levels = await loadUnlockedLevels(userId);
-
-            // ✅ Update the board selector again to reflect changes
-            document.getElementById("boardSelector").innerHTML = `
-                <option value="board1">Easy</option>
-                <option value="board2" ${levels.includes("medium") ? "" : "disabled"}>Medium</option>
-                <option value="board3" ${levels.includes("hard") ? "" : "disabled"}>Hard</option>
-            `;
-        });
-    }
-
-    // ✅ Handle login
-    loginButton.addEventListener("click", () => {
-        console.log("🔹 Login button clicked!");
-        signInWithPopup(auth, provider)
-            .then((result) => {
-                playerInfo.textContent = `Welcome, ${result.user.displayName}`;
-                loginButton.style.display = "none";
-                logoutButton.style.display = "block";
-            })
-            .catch((error) => console.error("❌ Login failed:", error));
-    });
-
-    logoutButton.addEventListener("click", async () => {
-        console.log("🔹 Logout button clicked!");
-    
-        try {
-            await signOut(auth);  // ✅ Logs out the user from Firebase
-            console.log("✅ User successfully logged out.");
-    
-            // ✅ Refresh the page to ensure a clean state for the next user
-            window.location.reload();
-        } catch (error) {
-            console.error("❌ Logout failed:", error);
-        }
-    
-        signOut(auth).then(() => {
-            playerInfo.textContent = "";
-            loginButton.style.display = "block";
-            logoutButton.style.display = "none";
-        }).catch((error) => console.error("❌ Logout failed:", error));
-    });
-    
-
-       // ✅ Pause button now pauses the game and opens the lobby
-       pauseButton.addEventListener("click", () => {
-        console.log("⏸️ Pausing game & opening lobby...");
-        if (gameManager && gameManager.isRunning && !gameManager.isPaused) {
-            gameManager.togglePause(); // Pause the game
-        }
-        lobbyOverlay.style.display = "flex"; // Show lobby overlay
-    });
-
-    // ✅ Return to Game button resumes the game and hides the lobby
-    returnToGameButton.addEventListener("click", () => {
-        console.log("▶️ Resuming game...");
-        if (gameManager && gameManager.isPaused) {
-            gameManager.togglePause(); // Unpause the game
-        }
-        lobbyOverlay.style.display = "none"; // Hide lobby overlay
-    });
-
-    // ✅ Start game button initializes game before hiding lobby
-    startGameButton.addEventListener("click", async () => {
-        console.log("🔹 Start Game button clicked!");
-    
-        const selectedBoard = boardSelector.value;
-    
-        // ✅ Get the logged-in user from Firebase Auth
-        const auth = getAuth();
-        const user = auth.currentUser;
-    
-        if (user) {
-            try {
-                const db = getFirestore();
-                const userDocRef = doc(db, "users", user.uid);
-    
-                // ✅ Save the selected board in Firestore
-                await setDoc(userDocRef, { selectedBoard }, { merge: true });
-    
-                console.log("✅ Selected board saved in Firestore:", selectedBoard);
-            } catch (error) {
-                console.error("❌ Error saving selected board:", error);
-            }
-        } else {
-            console.warn("⚠️ No user logged in, board selection will not be saved.");
-        }
-    
-        initializeGame();
-        console.log("✅ Hiding lobby...");
-        lobbyOverlay.style.display = "none"; // Hide lobby
-    });
-}
 
 function getCurrentUserId() {
     const auth = getAuth();
@@ -395,15 +81,205 @@ function getCurrentUserId() {
 }
 
 
-async function loadUnlockedLevels(userId) {
-    console.log("🔄 Fetching unlocked levels from Firestore...");
+async function initializeGame(levelIndex) {;
+
+    // ✅ If a game is already running, stop it first
+    if (gameManager) {
+        console.log("🛑 Stopping existing game before starting a new one...");
+        gameManager.stop();
+        gameManager = null;
+    }
+
+    startGameAtLevel(levelIndex);
+
+    // ✅ Enable "Return to Game" button
+    const returnToGameButton = document.getElementById("returnToGameButton");
+    if (returnToGameButton) {
+        returnToGameButton.disabled = false;
+    } else {
+        console.error("❌ returnToGameButton not found in DOM!");
+    }
+
+    // ✅ Remove Old Button Event Listeners Before Re-Adding
+    removeButtonEventListeners();
+
+    // ✅ Re-Add Button Event Listeners Only Once
+    gameManager.playerChargeManager.addButton("launchCircleButton", "circle", () => {
+        gameManager.pieceManager.createPiece("circle");
+    });
+
+    gameManager.playerChargeManager.addButton("launchTriangleButton", "triangle", () => {
+        gameManager.pieceManager.createPiece("triangle");
+    });
+
+    gameManager.playerChargeManager.addButton("launchRectangleButton", "rectangle", () => {
+        gameManager.pieceManager.createPiece("rectangle");
+    });
+
+    gameManager.playerChargeManager.addButton("launchSquareButton", "square", () => {
+        gameManager.pieceManager.createPiece("square");
+    });
+
+    // ✅ Update Button Displays
+    gameManager.playerChargeManager.updateButtonDisplays();
+}
+
+
+function startGameAtLevel(level) {
+    console.log(`🎮 Starting game at Level ${level}`);
+    GameManager.instance = null; 
+    gameManager = new GameManager(level);
+    gameManager.start();
+
+    document.getElementById("lobbyOverlay").style.display = "none"; // Hide lobby
+}
+
+
+    function removeButtonEventListeners() {
+        const buttons = ["launchCircleButton", "launchTriangleButton", "launchRectangleButton", "launchSquareButton"];
+        
+        buttons.forEach(buttonId => {
+            const button = document.getElementById(buttonId);
+            if (button) {
+                button.replaceWith(button.cloneNode(true)); // Clears listeners
+            }
+        });
+    }
+    
+    async function setupLobby() {
+    console.log("🔹 Setting up lobby...");
+
+    const lobbyOverlay = document.getElementById("lobbyOverlay");
+    const startGameButton = document.getElementById("startGameButton");
+    const chapterSelect = document.getElementById("chapterSelect");
+    const levelSelect = document.getElementById("levelSelect");
+    const returnToGameButton = document.getElementById("returnToGameButton");
+    const loginButton = document.getElementById("loginButton");
+    const logoutButton = document.getElementById("logoutButton");
+    const playerInfo = document.getElementById("playerInfo");
+
+    returnToGameButton.disabled = true;
+
+    const auth = getAuth();
+    const user = auth.currentUser;
+    
+    if (!user) {
+        console.warn("⚠️ No user logged in. Enabling login button...");
+        if (loginButton.style.display !== "block") loginButton.style.display = "block";
+        if (logoutButton.style.display !== "none") logoutButton.style.display = "none";
+        playerInfo.textContent = "";
+        
+        // Remove old event listeners before adding new one
+        loginButton.replaceWith(loginButton.cloneNode(true));
+        const newLoginButton = document.getElementById("loginButton");
+
+        newLoginButton.addEventListener("click", async () => {
+            console.log("🔹 Login button clicked!");
+            const provider = new GoogleAuthProvider();
+
+            try {
+                const result = await signInWithPopup(auth, provider);
+                console.log("✅ User logged in:", result.user.email);
+                playerInfo.textContent = `Welcome, ${result.user.displayName}`;
+                newLoginButton.style.display = "none";
+                logoutButton.style.display = "block";
+           
+            } catch (error) {
+                console.error("❌ Login failed:", error);
+            }
+        });
+    }
+
+    if (user) {
+        // ✅ User is logged in, set up logout button
+        console.log("✅ User is logged in. Setting up logout...");
+        if (loginButton.style.display !== "none") loginButton.style.display = "none";
+        if (logoutButton.style.display !== "block") logoutButton.style.display = "block";
+        playerInfo.textContent = `Welcome, ${user.displayName}`;  // ✅ Display user info
+
+        logoutButton.replaceWith(logoutButton.cloneNode(true));
+        const newLogoutButton = document.getElementById("logoutButton");
+
+        newLogoutButton.addEventListener("click", async () => {
+            console.log("🔹 Logout button clicked!");
+            try {
+                await signOut(auth);
+                console.log("✅ User successfully logged out.");
+                window.location.reload();
+            } catch (error) {
+                console.error("❌ Logout failed:", error);
+            }
+        });
+    }
+
+    populateLevels();
+    console.log("✅ Lobby setup complete.");
+    
+    const pauseButton = document.getElementById("pauseButton");
+    if (pauseButton) {
+        pauseButton.addEventListener("click", () => {
+            console.log("⏸️ Pausing game & opening lobby...");
+            if (gameManager && gameManager.isRunning && !gameManager.isPaused) {
+                gameManager.togglePause(); 
+            }
+            document.getElementById("lobbyOverlay").style.display = "flex"; // ✅ Show lobby overlay
+        });
+    }
+
+    // ✅ Return to Game button resumes the game and hides the lobby
+    if (returnToGameButton) {
+        returnToGameButton.addEventListener("click", () => {
+            console.log("▶️Return Button clicked... Resuming game...");
+            const gameManager = GameManager.getInstance(); // ✅ Ensure we use the same instance
+            if (gameManager && gameManager.isPaused) {
+                gameManager.togglePause();
+            }
+        });
+    }
+
+    startGameButton.addEventListener("click", async () => {
+
+        let chapter = parseInt(chapterSelect.value);
+        let level = parseInt(levelSelect.value);
+        let levelIndex = (chapter - 1) * 5 + level; 
+     
+        console.log(`🔹 Start Game button clicked! Starting Level ${levelIndex}`);
+        initializeGame(levelIndex);
+    
+        console.log("✅ Hiding lobby...");
+        document.getElementById("lobbyOverlay").style.display = "none"; // Hide lobby
+    });
+
+    // updates the chapter listener - it was firing twice, so this removes the old one
+    updateChapterListener();
+
+    levelSelect.addEventListener("change", () => {
+       
+        updateStartButtonText(chapterSelect.value, levelSelect.value);
+
+        console.log("levelSelect Value = ", levelSelect.value);
+    });    
+}
+
+function updateChapterListener() {
+    chapterSelect.removeEventListener("change", handleChapterChange); // Remove any existing listener
+    chapterSelect.addEventListener("change", handleChapterChange); // Attach a fresh listener
+}
+
+function handleChapterChange() {
+    populateLevels();
+    updateStartButtonText(chapterSelect.value, levelSelect.value);
+}
+
+
+async function loadProgressFromFirestore() {
 
     const auth = getAuth();
     const user = auth.currentUser;
 
     if (!user) {
-        console.warn("⚠️ No user logged in. Defaulting to Easy mode.");
-        return ["easy"]; // ✅ Ensure a default array is returned
+        console.warn("⚠️ No user logged in. Defaulting to Level 1.");
+        return 1;
     }
 
     try {
@@ -411,28 +287,113 @@ async function loadUnlockedLevels(userId) {
         const userDocRef = doc(db, "users", user.uid);
         const userDoc = await getDoc(userDocRef);
 
-        let unlockedLevels = { medium: false, hard: false }; // Default values
-
-        if (userDoc.exists() && userDoc.data().unlockedLevels) {
-            unlockedLevels = userDoc.data().unlockedLevels;
+        if (userDoc.exists() && userDoc.data().currentLevel) {
+            return userDoc.data().currentLevel;
+        } else {
+            console.log("🚀 First-time user detected. Creating profile...");
+            await setDoc(userDocRef, { currentLevel: 1 }, { merge: true });
+            return 1;
         }
-
-        console.log("🔓 Loaded Unlocked Levels from Firestore:", unlockedLevels);
-
-        // ✅ Convert unlockedLevels object into an array format for `.includes()`
-        const levelsArray = ["easy"];
-        if (unlockedLevels.medium) levelsArray.push("medium");
-        if (unlockedLevels.hard) levelsArray.push("hard");
-
-        return levelsArray;
     } catch (error) {
-        console.error("❌ Error loading unlocked levels from Firestore:", error);
-        return ["easy"]; // ✅ Default to an array to prevent crashes
+        console.error("❌ Error fetching progress from Firestore:", error);
+        return 1; // Default to Level 1 on error
     }
 }
 
 
+async function endGame(message) {
+    console.log("🏁 Game Over:", message);
+    gameManager.stop();
 
+    const endGameModal = document.getElementById("endGameModal");
+    if (!endGameModal || endGameModal.style.display === "flex") return;
+    const endGameMessage = document.getElementById("endGameMessage");
+
+    if (!endGameModal || !endGameMessage) {
+        console.error("❌ End Game Modal elements missing!");
+        return;
+    }
+
+    const auth = getAuth();
+    const user = auth.currentUser;
+
+    if (message.includes("You Won")) {
+        if (user) {
+            console.log("🎉 Player Won! Checking for next level unlock...");
+
+            try {
+                const db = getFirestore();
+                const userDocRef = doc(db, "users", user.uid);
+            
+                // Fetch the user's current highest unlocked level
+                const userDoc = await getDoc(userDocRef);
+                let highestUnlockedLevel = userDoc.exists() && userDoc.data().currentLevel 
+                    ? userDoc.data().currentLevel 
+                    : 1;
+            
+                console.log(highestUnlockedLevel, "🔥 Latest highest unlocked level from Firestore");
+            
+                // Ensure we never decrease progress
+                let newUnlockedLevel = Math.max(highestUnlockedLevel, currentLevel + 1);
+            
+                if (newUnlockedLevel > highestUnlockedLevel) {
+                    console.log("🔓 Unlocking Level:", newUnlockedLevel);
+                    await setDoc(userDocRef, { currentLevel: newUnlockedLevel }, { merge: true });
+                } else {
+                    console.log(`✅ No update needed. Highest level remains: ${highestUnlockedLevel}`);
+                }
+            
+                // ✅ Update UI with the correct highest level
+                populateLevels();
+            
+            } catch (error) {
+                console.error("❌ Error updating unlocked level:", error);
+            }                  
+        } else {
+            console.warn("⚠️ No user logged in, cannot sync unlocks to Firebase.");
+        }
+    }
+    // ✅ Show the end game popup
+    endGameMessage.textContent = message;
+    endGameModal.style.display = "flex";
+
+    // ✅ Disable "Return to Game" since no game is running
+    returnToGameButton.disabled = true;
+}
+
+async function populateLevels() {
+    levelSelect.innerHTML = "";
+    let unlockedLevel = await loadProgressFromFirestore(); // Get highest unlocked level
+    let chapter = parseInt(document.getElementById("chapterSelect").value, 10); // ✅ Use selected chapter
+    let chapterStart = (chapter - 1) * 5 + 1; // Convert chapter to level range (1-15)
+
+    for (let i = 1; i <= 5; i++) {
+        let levelNumber = chapterStart + (i - 1); // Convert to global level (1-15)
+        let option = document.createElement("option");
+        option.value = i;
+        option.textContent = `Level ${i}`;
+
+        if (levelNumber > unlockedLevel) {
+            option.disabled = true; // ✅ Correctly disable locked levels
+        }
+
+        levelSelect.appendChild(option);
+    }
+
+    // Ensure the first enabled level is selected
+    let firstEnabled = [...levelSelect.options].find(option => !option.disabled);
+    if (firstEnabled) {
+        levelSelect.value = firstEnabled.value;
+    }
+}
+
+    function updateStartButtonText(chapter, level) {
+        startGameButton.textContent = `Start Chapter ${convertToRoman(chapter)}, Level ${level}`;        
+    }
+
+    function convertToRoman(num) {
+        return ["I", "II", "III"][num - 1] || "I";
+    }
 
 function setupRulesModal() {
     const modal = document.getElementById("rulesModal");
@@ -492,4 +453,6 @@ function setupEndGameModal() {
         console.error("❌ End Game button not found!");
     }
 }
+
+export { endGame };
 

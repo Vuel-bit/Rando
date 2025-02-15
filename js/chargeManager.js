@@ -1,8 +1,9 @@
 import { ButtonManager } from "./buttonManager.js";
-import { StarButton } from "./buttonManager.js";
+
 
 export class ChargeManager {
-    constructor(MaxCharges, refreshTime, startingCharges = 5) {
+    constructor(gameManager, MaxCharges, refreshTime, startingCharges = 5) {
+        this.gameManager = gameManager; // ✅ Store reference to GameManager
         this.MaxCharges = MaxCharges;
         this.currentCharges = startingCharges;
         this.refreshTime = refreshTime;
@@ -10,6 +11,7 @@ export class ChargeManager {
         this.buttons = [];
         this.paused = false;
     }
+
 
     addButton(buttonId, type, onClickAction) {
         const buttonManager = new ButtonManager(buttonId, type, onClickAction, this, this.gameManager);
@@ -44,6 +46,11 @@ export class ChargeManager {
             button.button.innerText = `${this.currentCharges}`;
             button.button.disabled = this.currentCharges === 0;
         });
+
+            // If this ChargeManager belongs to AI, update the AI charge counter UI
+            if (this === this.gameManager.aiChargeManager) {
+                document.getElementById("aiChargeCounter").innerText = this.currentCharges;
+            }
         
     }
     

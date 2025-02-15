@@ -242,6 +242,7 @@ export class PieceManager {
     manageBoostCounter(piece, starButton) {
         if (piece.color === "blue") {
             this.blueBoostCounter++;
+            document.getElementById("blueBoostCounter").innerText = this.blueBoostCounter;
         }
         if (piece.color === "green" && this.greenBoostCounter < 10) {
             this.greenBoostCounter++;
@@ -252,6 +253,7 @@ export class PieceManager {
             this.gameManager.aiManager.handleBoost();
 
             this.blueBoostCounter = 0;
+            document.getElementById("blueBoostCounter").innerText = this.blueBoostCounter;
         }
 
         if (this.greenBoostCounter >= 10) {

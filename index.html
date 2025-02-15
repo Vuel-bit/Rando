@@ -23,61 +23,71 @@
     z-index: 9999;">
 </div> -->
 
-    <div id="container">
-
-        <!-- Header Section with Start Game, Scoreboard, and Pause -->
-        <div id="header">
-            <div id="scoreBoard">
-                <div class="score blue"><strong>Score:</strong> <span id="scoreBlue">0</span></div>
-                <div class="score green"><strong>Score:</strong> <span id="scoreGreen">0</span></div>
-            </div>
-            <button id="pauseButton">Un/Pause</button>
+<div id="container">
+    <!-- Header Section -->
+    <div id="header">
+        <div id="aiStats">
+            <div class="aiCounter" id="aiChargeCounter">0</div>
+            <div class="aiCounter" id="blueBoostCounter">0</div>
         </div>
-    
-        <!-- Canvas Section -->
-        <div id="canvasContainer">
-            <canvas id="colorCanvas" width="400" height="420"></canvas>
+        <div id="aiPortrait">
+            <img id="aiPortraitImg" src="" alt="AI Portrait">
         </div>
-
-        <!-- Buttons for Game Pieces -->
-        <div id="buttonContainer">
-            <button id="launchCircleButton">5</button>
-            <button id="launchRectangleButton">5</button>
-            <button id="launchSquareButton">5</button>
-            <button id="launchTriangleButton">5</button>
-            <button id="launchStarButton" disabled>0</button>
+        
+        <div id="scoreBoard">
+            <div class="score blue"><strong>Score:</strong> <span id="scoreBlue">0</span></div>
+            <div class="score green"><strong>Score:</strong> <span id="scoreGreen">0</span></div>
+        </div>
+        <div id="gameInfo">
+            <span>Chapter: <span id="currentChapter">1</span></span>
+            <span>Level: <span id="currentLevel">1</span></span>
+            <button id="pauseButton">Pause</button>
         </div>
     </div>
 
-        <!-- Lobby Overlay -->
-    <!-- ✅ Updated Lobby Overlay -->
+    <!-- Canvas Section -->
+    <div id="canvasContainer">
+        <canvas id="colorCanvas" width="400" height="420"></canvas>
+    </div>
+
+    <!-- Buttons for Game Pieces -->
+    <div id="buttonContainer">
+        <button id="launchCircleButton">5</button>
+        <button id="launchRectangleButton">5</button>
+        <button id="launchSquareButton">5</button>
+        <button id="launchTriangleButton">5</button>
+        <button id="launchStarButton" disabled>0</button>
+    </div>
+</div>
+
+
     <div id="lobbyOverlay">
         <h2>Rando</h2>
-
+    
         <div id="loginSection">
             <button id="loginButton">Login with Google</button>
             <button id="logoutButton" style="display: none;">Logout</button>
             <p id="playerInfo"></p>
         </div>
-
-        <div id="gameSettings">
-            <h3>Choose Your Board</h3>
-            <select id="boardSelector">
-                <option value="board1">Easy</option>
-                <option value="board2" disabled>Medium</option>
-                <option value="board3" disabled>Hard</option>
+    
+        <div id="levelSelector">
+            <h3>Select Chapter & Level</h3>
+            <select id="chapterSelect">
+                <option value="1">Chapter I</option>
+                <option value="2">Chapter II</option>
+                <option value="3">Chapter III</option>
             </select>
+            <select id="levelSelect"></select>
         </div>
         
-
-        <!-- ✅ Removed "Game Rules" label, kept only button -->
+    
         <button id="viewRulesButton">View Rules</button>
-
-        <!-- ✅ Added "Return to Game" button -->
-        <button id="returnToGameButton">Return to Game</button>
-
-        <button id="startGameButton">Start Game</button>
+        <button id="returnToGameButton" disabled>Return to Game</button> <!-- Starts disabled -->
+        <button id="startGameButton">Start Level 1</button>
     </div>
+    
+    
+    
 
     <!-- End Game Popup (Hidden by Default) -->
     <div id="endGameModal" class="modal">
