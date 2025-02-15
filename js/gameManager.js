@@ -30,7 +30,7 @@ export class GameManager {
 
         this.currentLevel = currentLevel; // ✅ Track current level
         this.pieceManager = new PieceManager(this);
-        this.playerChargeManager = new ChargeManager(this, 10, 1000);
+        this.playerChargeManager = new ChargeManager(this, 10, 4000);
         this.aiChargeManager = new ChargeManager(this, 10, this.getAIInterval()); 
         this.aiManager = new AIManager(this, this.getAIInterval()); // ✅ Use dynamic AI interval
     
