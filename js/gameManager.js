@@ -30,7 +30,7 @@ export class GameManager {
 
         this.currentLevel = currentLevel; // ✅ Track current level
         this.pieceManager = new PieceManager(this);
-        this.playerChargeManager = new ChargeManager(this, 10, 4000);
+        this.playerChargeManager = new ChargeManager(this, 10, 1000);
         this.aiChargeManager = new ChargeManager(this, 10, this.getAIInterval()); 
         this.aiManager = new AIManager(this, this.getAIInterval()); // ✅ Use dynamic AI interval
     
@@ -67,29 +67,7 @@ export class GameManager {
         return 4500;
     }
 
-    async advanceToNextLevel() {
-        if (this.currentLevel < 15) {
-            this.currentLevel++;
-            console.log(`🔓 Unlocking Level ${this.currentLevel}...`);
-    
-            const auth = getAuth();
-            const user = auth.currentUser;
-    
-            if (user) {
-                try {
-                    const db = getFirestore();
-                    const userDocRef = doc(db, "users", user.uid);
-                    await setDoc(userDocRef, { currentLevel: this.currentLevel }, { merge: true });
-    
-                    console.log("✅ Level progression saved in Firestore:", this.currentLevel);
-                } catch (error) {
-                    console.error("❌ Error saving new level in Firestore:", error);
-                }
-            } else {
-                console.warn("⚠️ No user logged in, cannot sync unlocks to Firebase.");
-            }
-        }
-    }
+
     
     
 
