@@ -1,19 +1,10 @@
-import { getFirestore, doc, getDoc, setDoc } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-firestore.js";
-import { PieceManager } from "./pieceManager.js";
 import { AIManager } from "./aiManager.js";
-import { ButtonManager } from "./buttonManager.js";
 import { ChargeManager } from "./chargeManager.js";
 import { StarButton } from "./buttonManager.js";
-import { getAuth } from "https://www.gstatic.com/firebasejs/11.2.0/firebase-auth.js";
 import { endGame } from "./main.js";
-
-
-
 
 const r = 15; // Hex Grid radius 
 const a = 2 * Math.PI / 6; // constant for drawing hexes
-
-
 
 export class GameManager {
 
@@ -34,9 +25,6 @@ export class GameManager {
         this.aiChargeManager = new ChargeManager(this, 10, this.getAIInterval()); 
         this.aiManager = new AIManager(this, this.getAIInterval()); // ✅ Use dynamic AI interval
     
-    
-        
-
         this.starButton = new StarButton("launchStarButton", this);
         this.isRunning = false;
         this.isPaused = false;
