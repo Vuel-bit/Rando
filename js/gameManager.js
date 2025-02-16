@@ -2,6 +2,8 @@ import { AIManager } from "./aiManager.js";
 import { ChargeManager } from "./chargeManager.js";
 import { StarButton } from "./buttonManager.js";
 import { endGame } from "./main.js";
+import { PieceManager } from "./pieceManager.js";
+
 
 const r = 15; // Hex Grid radius 
 const a = 2 * Math.PI / 6; // constant for drawing hexes
