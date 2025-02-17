@@ -325,21 +325,16 @@ async function endGame(message) {
             try {
                 const db = getFirestore();
                 const userDocRef = doc(db, "users", user.uid);
-                console.log(" Current Level before call to firestore: ", currentLevel);
+               
                 // Fetch the user's current highest unlocked level
                 const userDoc = await getDoc(userDocRef);
                 let highestUnlockedLevel = userDoc.exists() && userDoc.data().currentLevel 
                     ? userDoc.data().currentLevel 
                     : 1;
-            
-                console.log(highestUnlockedLevel, "🔥 Latest highest unlocked level from Firestore");
-            
-           
-                console.log("GameManger Level: ", gameManager.currentLevel);
         
                 if (gameManager.currentLevel === highestUnlockedLevel) {
-                    console.log("🔓 Unlocking Level:", currentLevel + 1);
-                    await setDoc(userDocRef, { currentLevel: currentLevel + 1}, { merge: true });
+
+                    await setDoc(userDocRef, { currentLevel: highestUnlockedLevel + 1}, { merge: true });
                 }   else {
                     console.log(`✅ No update needed. Highest level remains: ${highestUnlockedLevel}`);
                 }
